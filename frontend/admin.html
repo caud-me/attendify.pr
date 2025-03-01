@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendify - Admin</title>
+    <link rel="stylesheet" href="/stylesheets/pre.css">
+    <link rel="stylesheet" href="/stylesheets/ui.css">
+    <link rel="stylesheet" href="/stylesheets/fun.css">
+</head>
+<body>
+    <main class="notLimitedTo768p">
+        <header>
+            <h1><span id="admin_full_name"></span></h1>
+            <div class="respect">
+                <img src="resources/verified.svg" alt="">
+                <p>Verified Admin</p>
+                <a class="button" href="/logout">Sign Out</a>
+                <a href="/settings" class="button">Settings</a>
+            </div>
+        </header>
+        <div class="splitView">
+            <div>
+                <section id="banner" class="banner prompting wrapped">
+                    <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
+                    <h4>Welcome to</h4>
+                    <h1 class="colorfull">Attendify!</h1>
+                    <p>If you are familiar with using Notion, you'll definitely feel at home, There were no frameworks used, to ensure lightness of the site :></p>
+                    <button onclick="dismissBanner()">Got it, Thanks!</button>
+                </section>
+
+                <section>
+                    <h3>Registration</h3>
+                    <div class="tab-container" role="tablist">
+                        <button class="tab-button active" data-tab="teachers" role="tab">Teachers</button>
+                        <button class="tab-button" data-tab="facilitators" role="tab">Facilitators</button>
+                        <button class="tab-button" data-tab="admins" role="tab">Admins</button>
+                        <button class="tab-button" data-tab="students" role="tab">Students</button>
+                    </div>
+                    <div class="tab-content" data-tab="teachers" role="tabpanel">
+                        <h4>Teachers</h4>
+                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis voluptatibus dicta qui quod unde. Unde asperiores delectus aliquam. Illum quos nulla at id, iste voluptatibus doloremque cum repellat culpa tenetur.</p>
+                        <form action="/admin/createTeacher" method="post">
+                            <small>Complete Name</small>
+                            <input type="text" name="fullname" placeholder="Johnny Appleseed" required>
+                            <button type="submit">Create Teacher Account</button>
+                        </form>
+                    </div>
+                    <div class="tab-content" data-tab="facilitators" role="tabpanel">
+                        <h4>Facilitators</h4>
+                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis voluptatibus dicta qui quod unde. Unde asperiores delectus aliquam. Illum quos nulla at id, iste voluptatibus doloremque cum repellat culpa tenetur.</p>
+                        <form action="/admin/createFacilitator" method="post">
+                            <small>Complete Name</small>
+                            <input type="text" name="fullname" placeholder="Johnny Appleseed" required>
+                            <button type="submit">Create Facilitator Account</button>
+                        </form>
+                    </div>
+                    <div class="tab-content" data-tab="admins" role="tabpanel">
+                        <h4>Admins</h4>
+                        <p>Admins have full access to the system, the records, automation and database</p>
+                        <form action="/admin/createAdmin" method="post">
+                            <small>Complete Name</small>
+                            <input type="text" name="fullname" placeholder="Johnny Appleseed" required>
+                            <button type="submit">Create Admin Account</button>
+                        </form>
+                    </div>
+                    <div class="tab-content" data-tab="students" role="tabpanel">
+                        <h4>Students</h4>
+                        <form id="studentForm" action="/admin/createStudent" method="POST">
+                            <h3>Registering Student</h3>
+                        
+                            <small>Student ID (Provided by School)</small>
+                            <input type="text" name="student_id" placeholder="e.g. 02000376725" required>
+                        
+                            <small>Complete Name</small>
+                            <input type="text" name="full_name" placeholder="e.g. Johnny Appleseed" required>
+                        
+                            <small>RFID Number (Unique)</small>
+                            <input type="text" name="rfid" placeholder="e.g. RFID0001" required>
+                        
+                            <small>Is the student Regular or Irregular?</small>
+                            <select name="is_regular" id="is_regular" required onchange="toggleGradeSection()" title="n">
+                                <option value="1">Regular Student</option>
+                                <option value="0">Irregular Student</option>
+                            </select>
+                        
+                            <div id="regularSection">
+                                <small>Grade Section (Only for Regular Students)</small>
+                                <input type="text" name="grade_section" id="grade_section" placeholder="e.g. 12-MAWD" required>
+                            </div>
+                        
+                            <div id="irregularSection">
+                                <small>Select Subjects (For Irregular Students)</small>
+                                <div id="subjectList">Loading subjects...</div>
+                            </div>
+                        
+                            <small>Parent/Guardian Contact Number</small>
+                            <input type="text" name="guardian_contact" placeholder="e.g. +639261234567" required>
+                        
+                            <small>(Advanced) Student Profile Image</small>
+                            <input type="file" name="profile_image" accept="image/*" title="n">
+                        
+                            <button type="submit">+ Enroll Student to Attendify</button>
+                        </form>
+                        
+                        <script>
+                            function toggleGradeSection() {
+                                const isRegular = document.getElementById('is_regular').value == "1";
+                                const gradeSectionInput = document.getElementById('grade_section');
+                                const irregularSection = document.getElementById('irregularSection');
+        
+                                if (isRegular) {
+                                    gradeSectionInput.removeAttribute('disabled');
+                                    gradeSectionInput.setAttribute('required', 'true');
+                                    irregularSection.style.display = "none";
+                                } else {
+                                    gradeSectionInput.setAttribute('disabled', 'true');
+                                    gradeSectionInput.removeAttribute('required');
+                                    irregularSection.style.display = "block";
+                                    fetchSubjects(); // Load subjects when Irregular is selected
+                                }
+                            }
+        
+        
+        
+                            async function fetchSubjects() {
+                                try {
+                                    const response = await fetch("/admin/api"); // Fetch all admin data
+                                    const data = await response.json();
+        
+                                    if (data.admin_classes) {
+                                        const subjectListDiv = document.getElementById("subjectList");
+                                        subjectListDiv.innerHTML = ""; // Clear loading text
+                                        
+                                        data.admin_classes.forEach((subject) => {
+                                            const checkbox = document.createElement("input");
+                                            checkbox.type = "checkbox";
+                                            checkbox.name = "class_ids";
+                                            checkbox.value = subject.class_id;
+        
+                                            const small = document.createElement("small");
+                                            small.textContent = `${subject.class_id} - ${subject.teacher_username}`;
+                                            
+                                            const div = document.createElement("div");
+                                            div.appendChild(checkbox);
+                                            div.appendChild(small);
+        
+                                            subjectListDiv.appendChild(div);
+                                        });
+                                    }
+                                } catch (error) {
+                                    console.error("Error fetching subjects:", error);
+                                }
+                            }
+                        </script>
+                    </div>
+                </section>
+        
+                <section>
+                    <h3>Courses</h3>
+                    <form action="/admin/addCourse" method="post">
+                        <small>Course Code (Provided by School)</small>
+                        <input type="text" name="coursecode" placeholder="e.g. SHS1000" required>
+                        <small>Course Description</small>
+                        <input type="text" name="coursename" placeholder="e.g. Artificial Intelligence IV" required>
+                        <button type="submit">+ Add Course</button>
+                    </form>
+                </section>
+        
+                <section>
+                    <h3>Classes</h3>
+                    <p>The same teacher may have multiple classes as long as the schedules don't interfere</p>
+                    <form action="/admin/addClass" method="post">
+                        <h4>General</h4>
+                        <small>What Subject? In Course Code (Provided by School)</small>
+                        <input type="text" name="coursecode" placeholder="e.g. SHS1000" required>
+                        <small>For Grade Section?</small>
+                        <input type="text" name="gradesection" placeholder="e.g. 12-STEM" required>
+                        <small>Whos the Instructor for this course?</small>
+                        <input type="text" name="username" placeholder="e.g. johnny.appleseed" required>
+                        <h4>Schedule</h4>
+                        <small>Day of class</small>
+                        <select name="day" title="day">
+                            <option value="Mon" default>Mon</option>
+                            <option value="Tue">Tue</option>
+                            <option value="Wed">Wed</option>
+                            <option value="Thu">Thu</option>
+                            <option value="Fri">Fri</option>
+                        </select>
+                        <small>Start Time</small>
+                        <input type="text" name="starttime" placeholder="e.g. 10:30" required>
+                        <small>End Time</small>
+                        <input type="text" name="endtime" placeholder="e.g. 10:30" required>
+                        <button type="submit">+ Add Class</button>
+                    </form>
+                </section>
+            </div>
+            <div>
+                <section>
+                    <h3>Database Manager</h3>
+                    <div class="tab-container" role="tablist">
+                        <button class="tab-button active" data-tab="users" role="tab">Users</button>
+                        <button class="tab-button" data-tab="students" role="tab">Students</button>
+                        <button class="tab-button" data-tab="student_classes" role="tab">Student Classes</button>
+                        <button class="tab-button" data-tab="courses" role="tab">Courses</button>
+                        <button class="tab-button" data-tab="classes" role="tab">Classes</button>
+                    </div>
+                    <div class="tab-content active" data-tab="users" role="tabpanel">
+                        <h4>Users</h4>
+                        <div class="displayTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Username</th>
+                                        <th>Full Name</th>
+                                        <th>Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin_tableuser">
+        
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" data-tab="students" role="tabpanel">
+                        <h4>Students</h4>
+                        <div class="displayTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student ID</th>
+                                        <th>Full Name</th>
+                                        <th>RFID</th>
+                                        <th>Is Regular?</th>
+                                        <th>Grade Section</th>
+                                        <th>Profile Image</th>
+                                        <th>Guardian Contact</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin_tablestudents">
+        
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" data-tab="student_classes" role="tabpanel">
+                        <h4>Student Classes</h4>
+                        <div class="displayTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student ID</th>
+                                        <th>Class ID</th>
+                                        <th>Enrollment Type</th>
+                                        <th>Enrollment Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin_tablestudent_classes">
+        
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" data-tab="courses" role="tabpanel">
+                        <h4>Courses</h4>
+                        <div class="displayTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Course Code</th>
+                                        <th>Course Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin_tablecourses">
+        
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" data-tab="classes" role="tabpanel">
+                        <h4>Classes</h4>
+                        <div class="displayTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Class ID</th>
+                                        <th>Course Code</th>
+                                        <th>Grade Section</th>
+                                        <th>Instructor Username</th>
+                                        <th>Day</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin_tableclasses">
+        
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <script src="./scripts/global_banner.js"></script>
+    <script src="./scripts/global_theme.js"></script>
+    <script src="./scripts/admin.js"></script>
+</body>
+</html>

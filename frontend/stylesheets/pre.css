@@ -1,0 +1,22 @@
+html {
+    line-height: 1.3; /* Better readability */
+  }
+  
+  body {
+    margin: 0; /* Remove default margin */
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+  
+  button, input, select, textarea {
+    font: inherit; /* Ensures form elements match text styles */
+  }
+  
+  img {
+    max-width: 100%; /* Ensures images don’t overflow */
+    height: auto;
+  }
+  

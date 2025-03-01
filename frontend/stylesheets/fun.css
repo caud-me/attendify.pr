@@ -1,0 +1,19 @@
+.colorfull {
+    background: linear-gradient(45deg, #33f2b5, #14b5ff, #3243ff, #33f2b5, #14b5ff, #3243ff);
+    background-size: 500% 500%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: moveGradient 2s linear infinite;
+}
+
+@keyframes moveGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+button:hover {
+    background: linear-gradient(45deg, #33f2b5, #14b5ff, #3243ff, #33f2b5, #14b5ff, #3243ff);
+    background-size: 500% 500%;
+    animation: moveGradient 2s linear infinite;
+}

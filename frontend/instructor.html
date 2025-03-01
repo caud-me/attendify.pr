@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendify - Instructor</title>
+    <link rel="stylesheet" href="./stylesheets/pre.css">
+    <link rel="stylesheet" href="./stylesheets/ui.css">
+    <link rel="stylesheet" href="./stylesheets/fun.css">
+</head>
+
+<body>
+    <main>
+        <header>
+            <h1><span id="instructor_full_name"></span></h1>
+            <div class="respect">
+                <img src="resources/verified.svg" alt="" srcset="">
+                <p>Verified Teacher</p>
+                <a class="button" href="/logout">Sign Out</a>
+                <a href="/settings" class="button">Settings</a>
+            </div>
+        </header>
+
+        <section id="banner" class="banner prompting wrapped">
+            <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
+            <h4>Welcome to</h4>
+            <h1 class="colorfull">Attendify!</h1>
+            <p>If you are familiar with using Notion, you'll definitely feel at home, There were no frameworks used, to ensure lightness of the site :></p>
+            <button onclick="dismissBanner()">Got it, Thanks!</button>
+        </section>
+
+        <section>
+            <h3>Ongoing</h3>
+            <div id="isFreeTime" class="prompting wrapped">
+                <img src="resources/Chill-Time.svg" alt="" class="scalable">
+                <small>Cheers, no ongoing class right now!</small>
+            </div>
+
+            <div id="isFreeTimeC" class="hidden">
+                <div id="widget_ongoing">
+                    <div>
+                        <div id="widget_ongoing_section">MAWD</div>
+                        <div id="widget_ongoing_grade">12</div>
+                    </div>
+                    <div>
+                        <div id="widget_ongoing_course">Inquiries, Investigation, Immersion</div>
+                        <div id="widget_ongoing_schedule">10:30 am to 12 pm</div>
+                    </div>
+                </div>
+                <h3>Students</h3>
+                <p>You can get a copy of todays attendance <a href="#">here</a></p>
+                <div class="displayTable">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Time In</th>
+                                <th>Grade Section</th>
+                                <th>Student ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="instructor_ongoingStudents">
+                            <!-- Students data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Your <span id="day"></span> schedule</h3>
+            <p>You can get a copy of your schedule for <a href="/instructors/downloadTodayScheduleOfTeacher">today</a> or export your <a href="/instructors/downloadAllScheduleOfTeacher">full schedule</a>.</p>
+            <div class="displayTable">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Course</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instructor_schedule">
+                        <!-- instrutor_schedule filled with SQL -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h3>Monthly Attendance</h3>
+            <div class="controls">
+                <select id="month" name="month" title="month">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+
+                <select id="year" name="year" title="year"></select>
+            </div>
+            <div class="displayTable">
+                <table class="attendance-table">
+                    <thead>
+                        <tr id="attendanceHeader">
+                            <th>#</th>
+                            <th>Student Name</th>
+                            <!-- Day columns will be added dynamically -->
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exporting Data</h2>
+            <p>You can download a CSV copy of your students attendance records on the selected course here, note that the courses you're only incharge of is shown.</p>
+            <h4>Courses</h4>
+            <a href="#">Inquiries, Investigation, Immersion</a>
+            <a href="#">Work Immersion</a>
+        </section>
+
+        <!-- Modal -->
+        <div id="remarkModal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Flag a Student</h3>
+                <p id="remarkStudentName"></p>
+                <input type="text" id="remarkInput" placeholder="Enter remark here..."></input>
+                <div class="modal-buttons">
+                    <button id="remarkConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+
+    <script src="./scripts/instructor.js"></script>
+    <script src="./scripts/global_banner.js" defer></script>
+    <script src="./scripts/global_theme.js" defer></script>
+</body>
+
+</html>
