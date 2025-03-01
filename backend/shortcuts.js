@@ -13,13 +13,15 @@ const $generatePassword = (length) => {
   return password;
 }
 
+// update 1:40am less restrictive regex
 const $toUsername = (fullName) => {
   return fullName
-      .replace(/[^a-zA-Z\s]/g, '') // regex!!!
+      .replace(/[^a-zA-Z\s]/g, '.') 
       .trim()
-      .split(/\s+/) // regex-mini
+      .split(/\s+/) 
       .map(name => name.toLowerCase())
       .join('.');
 }
+
 
 module.exports = { $tryCatch, $resolvePath, $generatePassword, $toUsername };

@@ -1,12 +1,12 @@
 const { $resolvePath, $tryCatch } = require("./shortcuts.js");
 const { $requireRole } = require("./middleware.js");
-const $pool = require("./database.js");
 const cron = require("node-cron")
 const facilitatorRoutes = require('./routes/facilitator');
 const instructorRoutes = require('./routes/instructor');
+const guardRoutes = require('./routes/guard');
 const adminRoutes = require('./routes/admin');
 
-module.exports = (app) => {
+module.exports = (app, $pool) => {
   // Static routes
   app.get("/403", (req, res) => res.sendFile($resolvePath("../frontend/403.html")));
   app.get("/home", (req, res) => res.sendFile($resolvePath("../frontend/home.html")));
@@ -82,6 +82,7 @@ module.exports = (app) => {
   // API routes
   app.use('/facilitator', $requireRole(['facilitator']), facilitatorRoutes);
   app.use('/instructor', $requireRole(['teacher']), instructorRoutes);
+  app.use('/guard', $requireRole(['guard']), guardRoutes);
   app.use('/admin', $requireRole(['admin']), adminRoutes);
 
   // --

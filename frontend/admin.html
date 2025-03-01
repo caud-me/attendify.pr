@@ -33,9 +33,19 @@
                     <h3>Registration</h3>
                     <div class="tab-container" role="tablist">
                         <button class="tab-button active" data-tab="teachers" role="tab">Teachers</button>
+                        <button class="tab-button " data-tab="guards" role="tab">Guards</button>
                         <button class="tab-button" data-tab="facilitators" role="tab">Facilitators</button>
                         <button class="tab-button" data-tab="admins" role="tab">Admins</button>
                         <button class="tab-button" data-tab="students" role="tab">Students</button>
+                    </div>
+                    <div class="tab-content" data-tab="guards" role="tabpanel">
+                        <h4>Guard</h4>
+                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis voluptatibus dicta qui quod unde. Unde asperiores delectus aliquam. Illum quos nulla at id, iste voluptatibus doloremque cum repellat culpa tenetur.</p>
+                        <form action="/admin/createGuard" method="post">
+                            <small>Complete Name</small>
+                            <input type="text" name="fullname" placeholder="Johnny Appleseed" required>
+                            <button type="submit">Create Guard Account</button>
+                        </form>
                     </div>
                     <div class="tab-content" data-tab="teachers" role="tabpanel">
                         <h4>Teachers</h4>
@@ -77,6 +87,9 @@
                         
                             <small>RFID Number (Unique)</small>
                             <input type="text" name="rfid" placeholder="e.g. RFID0001" required>
+
+                            <small>RFID Order (Unique)</small>
+                            <input type="text" name="rfid_no" placeholder="e.g. 1" required>
                         
                             <small>Is the student Regular or Irregular?</small>
                             <select name="is_regular" id="is_regular" required onchange="toggleGradeSection()" title="n">
@@ -120,9 +133,7 @@
                                     fetchSubjects(); // Load subjects when Irregular is selected
                                 }
                             }
-        
-        
-        
+
                             async function fetchSubjects() {
                                 try {
                                     const response = await fetch("/admin/api"); // Fetch all admin data
@@ -160,9 +171,9 @@
                     <h3>Courses</h3>
                     <form action="/admin/addCourse" method="post">
                         <small>Course Code (Provided by School)</small>
-                        <input type="text" name="coursecode" placeholder="e.g. SHS1000" required>
+                        <input type="text" name="course_code" placeholder="e.g. SHS1000" required>
                         <small>Course Description</small>
-                        <input type="text" name="coursename" placeholder="e.g. Artificial Intelligence IV" required>
+                        <input type="text" name="course_name" placeholder="e.g. Artificial Intelligence IV" required>
                         <button type="submit">+ Add Course</button>
                     </form>
                 </section>
@@ -233,6 +244,7 @@
                                         <th>Student ID</th>
                                         <th>Full Name</th>
                                         <th>RFID</th>
+                                        <th>RFID Order</th>
                                         <th>Is Regular?</th>
                                         <th>Grade Section</th>
                                         <th>Profile Image</th>

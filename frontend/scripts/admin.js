@@ -66,6 +66,7 @@ async function admins_api() {
         <td>${eachData.student_id}</td>
         <td>${eachData.full_name}</td>
         <td>${eachData.rfid}</td>
+        <td>${eachData.rfid_no}</td>
         <td>${eachData.is_regular}</td>
         <td>${eachData.grade_section}</td>
         <td>${eachData.profile_image}</td>

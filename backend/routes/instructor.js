@@ -47,16 +47,18 @@ router.get('/me', $requireRole(['teacher']), async (req, res) => {
 
 router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
-  // hardcode for testing
-  // const dateString = req.query.date || '2025-02-10';
-  // const timeString = req.query.time || '17:00:00';
+  
+  //   const timezone = 'Asia/Manila';
+  //   const now = moment().tz(timezone);
 
-  const timezone = 'Asia/Manila';
-  const now = moment().tz(timezone);
+  // hardcode for testing
+  const hardcodedDateString = '2025-03-03T01:32:05+08:00';
+  const now = moment(hardcodedDateString)
   const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
   const timeString = now.format('HH:mm:ss'); // e.g., '00:51:00'
   const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
   const currentTime = timeString;
+  console.log(dateString, timeString, dayName, currentTime);
 
   try { // Important: Wrap the database operations in a try...catch block
       const [ongoing_class] = await $pool.execute(

@@ -16,7 +16,7 @@ router.get('/me', $requireRole(['admin']), async (req, res) => {
 
 router.get('/api', $requireRole(['admin']), async (req, res) => {
     const [users] = await $pool.execute(`SELECT * FROM users`);
-    const [students] = await $pool.execute(`SELECT * FROM students`);
+    const [students] = await $pool.execute(`SELECT * FROM students ORDER BY rfid_no`);
     const [student_classes] = await $pool.execute(`SELECT * FROM student_classes`);
     const [courses] = await $pool.execute(`SELECT * FROM courses`);
     const [classes] = await $pool.execute(`SELECT * FROM classes`);
@@ -51,6 +51,23 @@ router.post('/createTeacher', $requireRole(['admin']), async (req, res) => {
     }
 });
 
+router.post('/createGuard', $requireRole(['admin']), async (req, res) => {
+  const { fullname } = req.body;
+  const username = $toUsername(fullname);
+  const password = $generatePassword(12);
+
+  try {
+      await $pool.execute(
+          `INSERT INTO users (username, full_name, password, role) VALUES (?, ?, ?, ?)`,
+          [username, fullname, password, 'guard']
+      );
+      console.log(`[Attendify] Admin created guard ${username}`);
+      res.json({ message: 'User created', fullname, password });
+  } catch (error) {
+      res.json({ message: 'Either duplicate entry, or something is wrong'});
+  }
+});
+
 router.post('/createFacilitator', $requireRole(['admin']), async (req, res) => {
     const { fullname } = req.body;
     const username = $toUsername(fullname);
@@ -68,14 +85,6 @@ router.post('/createFacilitator', $requireRole(['admin']), async (req, res) => {
     }
 });
 
-// Additional admin routes...
-// Add the remaining routes from .txt file:
-// - createAdmin
-// - addCourse  
-// - addClass
-// - createStudent
-// - resetDatabase
-// - prefillAttendance schedule
 router.post('/createAdmin', $requireRole(['admin']), async (req, res) => {
   const { fullname } = req.body;
   const username = $toUsername(fullname);
@@ -94,49 +103,95 @@ router.post('/createAdmin', $requireRole(['admin']), async (req, res) => {
 });
 
 router.post('/addCourse', $requireRole(['admin']), async (req, res) => {
-  const { course_name } = req.body;
+  const { course_code, course_name } = req.body;
 
   try {
-    await $pool.execute(
-      `INSERT INTO courses (course_name) VALUES (?)`,
-      [course_name]
-    );
+    await $pool.execute(`INSERT INTO courses (course_code, course_name) VALUES (?, ?)`, [course_code, course_name]);
     console.log(`[Attendify] Admin added course ${course_name}`);
-    res.json({ message: 'Course added', course_name });
+    res.json({ message: `Course added ${course_name}` });
   } catch (error) {
-    res.json({ message: 'Either duplicate entry, or something is wrong' });
+    res.json(error);
   }
 });
 
+// 1:41am stable class_id
 router.post('/addClass', $requireRole(['admin']), async (req, res) => {
-  const { class_name, course_id } = req.body;
+  const { coursecode, gradesection, username, day, starttime, endtime } = req.body;
+
+  // arron: generate class-id, less restrictive regex
+  const CLASSID = `${gradesection}-${coursecode}-${day.toUpperCase()}-${starttime.replace(':', '')}`;
+  const pattern = /^\d{2}-[a-zA-Z0-9]+-[a-zA-Z0-9]+-[A-Z]{3}-\d{4}$/i;
+
+  if (!pattern.test(CLASSID)) {
+    return res.status(400).json({ message: `Invalid class_id format. Follow: 12-MAWD-APPLIED1006-MON-0900 ${CLASSID}` });
+  }
 
   try {
-    await $pool.execute(
-      `INSERT INTO classes (class_name, course_id) VALUES (?, ?)`,
-      [class_name, course_id]
+    const [result] = await $pool.execute(
+      `INSERT INTO classes (class_id, course_code, grade_section, teacher_username, day, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [CLASSID, coursecode, gradesection, username, day, starttime, endtime]
     );
-    console.log(`[Attendify] Admin added class ${class_name}`);
-    res.json({ message: 'Class added', class_name });
+
+    res.json({ message: 'Class Created', class_id: CLASSID });
+    console.log(`[Attendify] Admin created class ${CLASSID}`);
+    console.log(`[Attendify] ${username} is now in charge of course ${coursecode}`);
   } catch (error) {
-    res.json({ message: 'Either duplicate entry, or something is wrong' });
+    console.log(error)
+    res.json(error);
   }
 });
 
+// 1:41am stable class_id
 router.post('/createStudent', $requireRole(['admin']), async (req, res) => {
-  const { fullname } = req.body;
-  const username = $toUsername(fullname);
-  const password = $generatePassword(12);
+  const { student_id, full_name, rfid, rfid_no, is_regular, grade_section, guardian_contact, class_ids } = req.body;
+  const profile_image = req.file ? req.file.filename : null; // Handle file upload if applicable
 
   try {
-    await $pool.execute(
-      `INSERT INTO users (username, full_name, password, role) VALUES (?, ?, ?, ?)`,
-      [username, fullname, password, 'student']
-    );
-    console.log(`[Attendify] Admin created student ${username}`);
-    res.json({ message: 'User created', fullname, password });
+      console.log(`[Attendify] Attempting to create student: ${full_name} (${student_id})`);
+
+      // Check if RFID already exists
+      const [existingStudent] = await $pool.execute(`SELECT * FROM students WHERE rfid = ?`, [rfid]);
+      if (existingStudent.length > 0) {
+          console.log(`[Attendify] RFID conflict: ${rfid} already exists.`);
+          return res.status(400).json({ message: 'RFID already exists' });
+      }
+
+      // Insert student into database
+      await $pool.execute(
+          `INSERT INTO students (student_id, full_name, rfid, rfid_no, is_regular, grade_section, profile_image, guardian_contact) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [student_id, full_name, rfid, rfid_no, is_regular, is_regular == 1 ? grade_section : null, profile_image, guardian_contact]
+      );
+
+      console.log(`[Attendify] Student created: ${full_name} (${student_id})`);
+
+      if (is_regular == 1) {
+          // Auto-enroll regular students in their grade section courses
+          const [classes] = await $pool.execute(`SELECT class_id FROM classes WHERE grade_section = ?`, [grade_section]);
+          for (const cls of classes) {
+              await pool.execute(
+                  `INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date) VALUES (?, ?, 'preset', CURDATE())`,
+                  [student_id, cls.class_id]
+              );
+              console.log(`[Attendify] Auto-enrolled ${full_name} in class ${cls.class_id}`);
+          }
+      } else {
+          // Manually enroll irregular students in selected classes
+          if (class_ids && class_ids.length > 0) {
+              const values = class_ids.map(class_id => [student_id, class_id, 'manual', new Date()]);
+              await pool.query(`INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date) VALUES ?`, [values]);
+              console.log(`[Attendify] Manually enrolled ${full_name} in ${class_ids.length} classes`);
+          }
+
+          console.log(`[Attendify] Irregular student enrollment completed. Available classes can be fetched from '/admins/api'`);
+      }
+
+      res.json({ message: 'Student Enrolled Successfully' });
+      console.log(`[Attendify] Enrollment completed: ${full_name} (${student_id})`);
+
   } catch (error) {
-    res.json({ message: 'Either duplicate entry, or something is wrong' });
+      console.error(`[Attendify] Error enrolling student:`, error);
+      res.status(500).json({ message: 'Error enrolling student' });
   }
 });
 
