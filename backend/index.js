@@ -187,9 +187,11 @@ async function prefillAttendance() {
 
 
 
+
 // Start server
 httpServer.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
 cron.schedule('0 0 * * *', prefillAttendance); // Run daily at midnight
+prefillAttendance(); // Run immediately on server start
