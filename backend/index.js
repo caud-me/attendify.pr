@@ -186,6 +186,7 @@ async function prefillAttendance() {
 }
 
 
+
 // Start server
 httpServer.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

@@ -137,6 +137,45 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
   }
 });
 
+router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (req, res) => {
+  const username = req.session.user.username;
+
+  const timezone = 'Asia/Manila';
+  const now = moment().tz(timezone);
+  const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
+  const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
+
+  const [result] = await $pool.execute(
+      `SELECT 
+          s.student_id, 
+          s.full_name, 
+          s.grade_section, 
+          a.status, 
+          a.time_in, 
+          a.remark 
+      FROM students s
+      JOIN student_classes sc ON s.student_id = sc.student_id
+      LEFT JOIN attendance a ON s.student_id = a.student_id
+      WHERE sc.class_id IN (
+          SELECT class_id FROM classes WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
+      )
+      AND a.attendance_date = ?
+      ORDER BY s.grade_section, s.full_name;
+      `,
+      [username, dayName, now.format('HH:mm:ss'), dateString]
+  );
+
+  console.log("📊 Attendance data:", result);
+  const worksheet = xlsx.utils.json_to_sheet(result);
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Today");
+
+  const filePath = path.join(__dirname, `[Attendify] Student Attendance Today.xlsx`);
+  xlsx.writeFile(workbook, filePath);
+
+  res.download(filePath);
+});
+
 router.get('/downloadTodayScheduleOfTeacher', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
 
