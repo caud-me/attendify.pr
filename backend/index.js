@@ -149,8 +149,8 @@ async function prefillAttendance() {
 
       // 1. Archive current attendance records into attendance_history
       const archiveQuery = `
-          INSERT INTO attendance_history (attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by)
-          SELECT attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by
+          INSERT INTO attendance_history (attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark)
+          SELECT attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark
           FROM attendance
       `;
       await pool.execute(archiveQuery);
@@ -161,8 +161,6 @@ async function prefillAttendance() {
       console.log(`[Attendify] Attendance table truncated.`);
 
       // 3. Prefill attendance for today's classes
-      //    Note: The classes table has a 'day' column (enum: 'Mon','Tue','Wed','Thu','Fri').
-      //          DATE_FORMAT(CURDATE(), '%a') returns a three-letter abbreviation (e.g., 'Mon') that matches.
       const prefillQuery = `
           INSERT INTO attendance (student_id, class_id, attendance_date, status, recorded_by)
           SELECT sc.student_id, cm.class_id, CURDATE(), 'absent', 'system'
@@ -194,4 +192,3 @@ httpServer.listen(port, () => {
 });
 
 cron.schedule('0 0 * * *', prefillAttendance); // Run daily at midnight
-prefillAttendance(); // Run immediately on server start

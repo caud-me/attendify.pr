@@ -303,31 +303,77 @@ router.post('/add-remark', $requireRole(['teacher']), async (req, res) => {
   }
 });
 
-// Add the missing monthlyAttendance endpoint
 router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => {
   try {
     const { month, year } = req.query;
     const username = req.session.user.username;
 
+    if (!month || !year) {
+      return res.status(400).json({ message: 'Month and year are required' });
+    }
+
     const [result] = await $pool.execute(`
       SELECT 
-        a.attendance_date,
-        c.course_name,
-        cm.grade_section,
-        COUNT(CASE WHEN a.status = 'present' THEN 1 END) as present_count,
-        COUNT(CASE WHEN a.status = 'absent' THEN 1 END) as absent_count,
-        COUNT(CASE WHEN a.status = 'late' THEN 1 END) as late_countf
-      FROM attendance a
-      JOIN classes cm ON a.class_id = cm.class_id
-      JOIN courses c ON cm.course_code = c.course_code
-      WHERE cm.teacher_username = ?
-      AND MONTH(a.attendance_date) = ?
-      AND YEAR(a.attendance_date) = ?
-      GROUP BY a.attendance_date, c.course_name, cm.grade_section
-      ORDER BY a.attendance_date DESC
-    `, [username, month, year]);
+          ah.attendance_id,
+          ah.student_id,
+          s.full_name,
+          ah.class_id,
+          ah.attendance_date,
+          ah.status,
+          ah.time_in,
+          ah.time_out,
+          ah.recorded_by,
+          ah.archived_at,
+          ah.remark
+      FROM attendance_history ah
+      JOIN students s ON ah.student_id = s.student_id
+      WHERE DATE_FORMAT(ah.attendance_date, '%Y-%m') = ?
+      ORDER BY ah.attendance_date, ah.student_id;
+    `, [`${year}-${month.padStart(2, '0')}`]);
 
     res.json(result);
+  } catch (error) {
+    console.error('[Attendify] Error fetching monthly attendance:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/downloadMonthlyAttendance', $requireRole(['teacher']), async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const username = req.session.user.username;
+
+    if (!month || !year) {
+      return res.status(400).json({ message: 'Month and year are required' });
+    }
+
+    const [result] = await $pool.execute(`
+      SELECT 
+          ah.attendance_id,
+          ah.student_id,
+          s.full_name,
+          ah.class_id,
+          ah.attendance_date,
+          ah.status,
+          ah.time_in,
+          ah.time_out,
+          ah.recorded_by,
+          ah.archived_at,
+          ah.remark
+      FROM attendance_history ah
+      JOIN students s ON ah.student_id = s.student_id
+      WHERE DATE_FORMAT(ah.attendance_date, '%Y-%m') = ?
+      ORDER BY ah.attendance_date, ah.student_id;
+    `, [`${year}-${month.padStart(2, '0')}`]);
+
+    const worksheet = xlsx.utils.json_to_sheet(result);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Monthly Attendance");
+
+    const filePath = path.join(__dirname, `[Attendify] Monthly Attendance ${year}-${month.padStart(2, '0')}.xlsx`);
+    xlsx.writeFile(workbook, filePath);
+
+    res.download(filePath);
   } catch (error) {
     console.error('[Attendify] Error fetching monthly attendance:', error);
     res.status(500).json({ message: 'Internal server error' });
