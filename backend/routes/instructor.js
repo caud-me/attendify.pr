@@ -16,7 +16,8 @@ let latestData = {};
 // Listen for real-time changes
 socket.on('fileChanged', (data) => {
   console.log('Received updated data.json:', data);
-  latestData = data; // Store the updated data
+  latestData = data; 
+  console.log('Stored latest data:', latestData);
 });
 
 // Endpoint to get real-time data

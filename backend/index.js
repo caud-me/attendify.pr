@@ -132,8 +132,14 @@ app.use('/admin', $requireRole(['admin']), adminRoutes);
 // Watch data.json for changes
 const dataPath = path.join(__dirname, '../data/data.json');
 chokidar.watch(dataPath).on('change', () => {
-  const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-  io.emit('fileChanged', data);
+  fs.readFile(dataPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('[Attendify] Error reading data file:', err);
+      return;
+    }
+    const jsonData = JSON.parse(data);
+    io.emit('fileChanged', jsonData);
+  });
 });
 
 // prefilling, with cron
