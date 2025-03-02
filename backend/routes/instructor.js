@@ -48,12 +48,12 @@ router.get('/me', $requireRole(['teacher']), async (req, res) => {
 router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
   
-  //   const timezone = 'Asia/Manila';
-  //   const now = moment().tz(timezone);
+    const timezone = 'Asia/Manila';
+    const now = moment().tz(timezone);
 
   // hardcode for testing
-  const hardcodedDateString = '2025-03-03T01:32:05+08:00';
-  const now = moment(hardcodedDateString)
+//   const hardcodedDateString = '2025-03-03T01:32:05+08:00';
+//   const now = moment(hardcodedDateString)
   const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
   const timeString = now.format('HH:mm:ss'); // e.g., '00:51:00'
   const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
@@ -194,6 +194,7 @@ router.post('/add-remark', $requireRole(['teacher']), async (req, res) => {
       const now = moment().tz(timezone);
       const timeString = now.format('HH:mm:ss'); // 'HH:MM:SS'
       const dayName = now.format('ddd');
+      console.log("🕒 Current time:", timeString, dayName);
 
       const [ongoing_class] = await $pool.execute(`
           SELECT class_id FROM classes 
@@ -257,7 +258,7 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
         cm.grade_section,
         COUNT(CASE WHEN a.status = 'present' THEN 1 END) as present_count,
         COUNT(CASE WHEN a.status = 'absent' THEN 1 END) as absent_count,
-        COUNT(CASE WHEN a.status = 'late' THEN 1 END) as late_count
+        COUNT(CASE WHEN a.status = 'late' THEN 1 END) as late_countf
       FROM attendance a
       JOIN classes cm ON a.class_id = cm.class_id
       JOIN courses c ON cm.course_code = c.course_code

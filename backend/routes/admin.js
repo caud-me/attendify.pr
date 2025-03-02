@@ -3,7 +3,6 @@ const router = express.Router();
 const { $requireRole } = require('../middleware.js');
 const { $generatePassword, $toUsername } = require('../shortcuts.js');
 const $pool = require('../database.js');
-require('dotenv').config();
 
 router.get('/me', $requireRole(['admin']), async (req, res) => {
     const $admin_username = req.session.user.username;
@@ -169,7 +168,7 @@ router.post('/createStudent', $requireRole(['admin']), async (req, res) => {
           // Auto-enroll regular students in their grade section courses
           const [classes] = await $pool.execute(`SELECT class_id FROM classes WHERE grade_section = ?`, [grade_section]);
           for (const cls of classes) {
-              await pool.execute(
+              await $pool.execute(
                   `INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date) VALUES (?, ?, 'preset', CURDATE())`,
                   [student_id, cls.class_id]
               );
@@ -179,7 +178,7 @@ router.post('/createStudent', $requireRole(['admin']), async (req, res) => {
           // Manually enroll irregular students in selected classes
           if (class_ids && class_ids.length > 0) {
               const values = class_ids.map(class_id => [student_id, class_id, 'manual', new Date()]);
-              await pool.query(`INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date) VALUES ?`, [values]);
+              await $pool.query(`INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date) VALUES ?`, [values]);
               console.log(`[Attendify] Manually enrolled ${full_name} in ${class_ids.length} classes`);
           }
 
