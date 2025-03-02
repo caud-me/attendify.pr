@@ -514,22 +514,27 @@ main {
 
     .present {
         background-color: lightgreen;
+        opacity: 50%;
     }
 
     .absent {
         background-color: lightgray;
+        opacity: 50%;
     }
 
     .late {
         background-color: lightorange;
+        opacity: 50%;
     }
 
     .cutting {
         background-color: lightred;
+        opacity: 50%;
     }
 
     .excused {
         background-color: lightblue;
+        opacity: 50%;
     }
 
 
@@ -540,8 +545,9 @@ main {
     .attendance-table thead th:nth-child(2) {
         position: sticky;
         left: 0;
-        background: var(--ui-white);
         z-index: 3;
+        -webkit-backdrop-filter: blur(10px) brightness(0.5);
+        backdrop-filter: blur(10px) brightness(0.5);
     }
 
     .switch {
