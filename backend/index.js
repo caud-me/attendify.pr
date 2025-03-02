@@ -9,15 +9,7 @@ const mysql = require('mysql2/promise');
 const cron = require('node-cron');
 
 // Database connection
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '0000',
-  database: 'attendify5',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+const pool = require('./database.js');
 
 // Middleware
 const { sessionMiddleware } = require('./middleware.js');

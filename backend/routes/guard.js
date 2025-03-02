@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { $pool } = require('../index.js');
+const $pool = require('../database.js');
 const { $requireRole } = require('../middleware.js');
-
-console.log('$requireRole in guard.js:', $requireRole);
 
 router.get('/me', $requireRole(['guard']), async (req, res) => {
 
