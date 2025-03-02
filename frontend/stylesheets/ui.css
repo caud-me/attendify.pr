@@ -134,7 +134,7 @@ section {
     margin: 4rem 0;
 }
 
-.wrapped {
+.wrapped, .tab-content {
     padding: 1rem;
     background-color: var(--ui-grayTranslucent1);
     border: solid 1px var(--ui-grayTranslucent1);
