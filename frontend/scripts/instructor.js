@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", function() {
+    const socket = io('http://localhost:3000'); // Connect to the WebSocket server
+
+    // Listen for real-time updates
+    socket.on('fileChanged', (data) => {
+        console.log('Updated data received:', data);
+    
+        // Update the UI dynamically
+        document.getElementById('liveDataContainer').innerText = JSON.stringify(data, null, 2);
+    });
+    
     // Initialize month and year dropdowns
     const monthDropdown = document.getElementById("month");
     const yearDropdown = document.getElementById("year");

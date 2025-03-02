@@ -5,6 +5,24 @@ const $pool = require('../database.js');
 const moment = require('moment-timezone');
 const path = require('path');
 const xlsx = require('xlsx');
+const socketIoClient = require('socket.io-client');
+
+// Connect to the WebSocket server
+const socket = socketIoClient('http://localhost:3000'); // Adjust if needed
+
+// Store the latest data.json content
+let latestData = {};
+
+// Listen for real-time changes
+socket.on('fileChanged', (data) => {
+  console.log('Received updated data.json:', data);
+  latestData = data; // Store the updated data
+});
+
+// Endpoint to get real-time data
+router.get('/live-data', $requireRole(['teacher']), (req, res) => {
+  res.json(latestData);
+});
 
 router.get('/me', $requireRole(['teacher']), async (req, res) => {
   const timezone = 'Asia/Manila'; // Replace with your desired timezone

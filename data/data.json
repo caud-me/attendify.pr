@@ -1,4 +1,4 @@
 {
-    "rfid": "RFID0XXX",
-    "r3fid": "RFID0XXX"
+    "rfid": "00 10 20",
+    "time-in": "13:29"
 }

@@ -90,7 +90,7 @@
             </div>
         </section>
 
-        <section>
+        <!-- <section>
             <h3>Monthly Attendance</h3>
             <div class="controls">
                 <select id="month" name="month" title="month">
@@ -116,23 +116,30 @@
                         <tr id="attendanceHeader">
                             <th>#</th>
                             <th>Student Name</th>
-                            <!-- Day columns will be added dynamically -->
+
                         </tr>
                     </thead>
                     <tbody id="attendanceTableBody"></tbody>
                 </table>
             </div>
-        </section>
+        </section> -->
 
-        <section>
+        <!-- <section>
             <h2>Exporting Data</h2>
             <p>You can download a CSV copy of your students attendance records on the selected course here, note that the courses you're only incharge of is shown.</p>
             <h4>Courses</h4>
             <a href="#">Inquiries, Investigation, Immersion</a>
             <a href="#">Work Immersion</a>
+        </section> -->
+
+        <section>
+            <h3>JSON Response</h3>
+            <pre id="liveDataContainer">
+                
+            </pre>
         </section>
 
-        <!-- Modal -->
+
         <div id="remarkModal" class="modal hidden">
             <div class="modal-content">
                 <h3>Flag a Student</h3>
@@ -147,7 +154,8 @@
     </main>
 
 
-    <script src="./scripts/instructor.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="scripts/instructor.js"></script>
     <script src="./scripts/global_banner.js" defer></script>
     <script src="./scripts/global_theme.js" defer></script>
 </body>
