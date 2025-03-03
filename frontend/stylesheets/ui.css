@@ -546,8 +546,7 @@ main {
         position: sticky;
         left: 0;
         z-index: 3;
-        -webkit-backdrop-filter: blur(10px) brightness(0.5);
-        backdrop-filter: blur(10px) brightness(0.5);
+        backdrop-filter: blur(10px);
     }
 
     .switch {

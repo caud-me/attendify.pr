@@ -26,9 +26,9 @@ const port = 3000;
 
 // Create HTTP server
 const httpServer = http.createServer(app);
+const io = socketIo(httpServer);
 
 // Setup Socket.io
-const io = socketIo(httpServer);
 io.on('connection', (socket) => {
   console.log('A user connected');
   socket.on('disconnect', () => {
@@ -91,6 +91,7 @@ app.post('/signin', async (req, res) => {
 
       console.log('[Attendify] logged in as', req.session.user.username);
       res.redirect(redirectPaths[req.session.user.role]);
+      setupChokidar(req);
     } else {
       res.status(401).send(`Invalid credentials <a href='/home'>Go back.</a>`);
     }
@@ -129,18 +130,166 @@ app.use('/instructor', $requireRole(['teacher']), instructorRoutes);
 app.use('/guard', $requireRole(['guard']), guardRoutes);
 app.use('/admin', $requireRole(['admin']), adminRoutes);
 
+// new function
+
 // Watch data.json for changes
 const dataPath = path.join(__dirname, '../data/data.json');
-chokidar.watch(dataPath).on('change', () => {
-  fs.readFile(dataPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('[Attendify] Error reading data file:', err);
-      return;
-    }
-    const jsonData = JSON.parse(data);
-    io.emit('fileChanged', jsonData);
-  });
+
+// Function to read data from data.json
+function readData() {
+  try {
+      const data = fs.readFileSync(dataPath, 'utf8');
+      return JSON.parse(data);
+  } catch (error) {
+      console.error("Error reading data.json:", error);
+      return {};
+  }
+}
+
+// Function to write data to data.json
+function writeData(data) {
+  try {
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), 'utf8');
+      return true;
+  } catch (error) {
+      console.error("Error writing to data.json:", error);
+      return false;
+  }
+}
+
+app.post('/api/updateData', (req, res) => {
+  if (!req.session.user || !req.session.user.username) {
+      return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const username = req.session.user.username;
+  const update = req.body; // Data to update
+
+  const currentData = readData();
+  const newData = { ...currentData, ...update };
+
+  if (writeData(newData)) {
+      console.log(`[Attendify] data.json updated by ${username}:`, newData);
+      io.emit('dataUpdated', { data: newData, user: username });
+      res.status(200).json({ message: 'Data updated successfully' });
+  } else {
+      res.status(500).json({ message: 'Failed to update data' });
+  }
 });
+
+// chokidar.watch(dataPath).on('change', () => {
+//   const updatedData = readData();
+//   // io.emit('fileChanged', updatedData);
+//   console.log(`[Attendify] data.json changed! ${JSON.stringify(updatedData)}`);
+//   console.log({ data: updatedData, user: 'external' }); 
+//   io.emit('fileChanged', { data: updatedData, user: 'external' });
+// });
+
+// Function to process attendance updates from data.json changes (using RFID as keys)
+async function processAttendanceData(updatedData, ME) {
+  const moment = require('moment-timezone');
+  const timezone = 'Asia/Manila';
+  const now = moment().tz(timezone);
+  const today = now.format('YYYY-MM-DD');
+  const timeString = now.format('HH:mm:ss');
+  const dayName = now.format('ddd'); // e.g., "Mon", "Tue", etc.
+
+  // Get the ongoing class for the current instructor (ME)
+  const [ongoing_class] = await pool.execute(
+    `SELECT class_id FROM classes 
+     WHERE teacher_username = ? 
+       AND day = ? 
+       AND ? BETWEEN start_time AND end_time 
+     LIMIT 1`,
+    [ME, dayName, timeString]
+  );
+
+  if (ongoing_class.length === 0) {
+    console.error(`[Attendify] No ongoing class found for instructor ${ME}`);
+    return;
+  }
+  const classId = ongoing_class[0].class_id;
+  console.log(`[Attendify] Found ongoing class ${classId} for instructor ${ME}`);
+
+  // Use updatedData directly if it's keyed by RFID
+  const attendanceRecords = updatedData.data ? updatedData.data : updatedData;
+  if (Object.keys(attendanceRecords).length === 0) {
+    console.error('[Attendify] No attendance data found in the updated file.');
+    return;
+  }
+  
+  // Process each record using RFID as key
+  for (const rfid in attendanceRecords) {
+    const studentData = attendanceRecords[rfid];
+    if (!studentData || !studentData.status || !studentData.timeIn) {
+      console.warn(`[Attendify] Incomplete data for RFID ${rfid}`);
+      continue;
+    }
+    
+    // Map RFID to student_id using your students table
+    const [studentRows] = await pool.execute(
+      `SELECT student_id FROM students WHERE rfid = ? LIMIT 1`,
+      [rfid]
+    );
+    if (studentRows.length === 0) {
+      console.warn(`[Attendify] No student found with RFID ${rfid}`);
+      continue;
+    }
+    const studentId = studentRows[0].student_id;
+    
+    if (studentData.status.toLowerCase() === 'in') {
+      // Update the attendance record with time_in and mark as present
+      const checkInQuery = `
+        UPDATE attendance 
+        SET time_in = ?, status = 'present', updated_at = NOW()
+        WHERE student_id = ? AND class_id = ? AND attendance_date = ?
+      `;
+      const [result] = await pool.execute(checkInQuery, [studentData.timeIn, studentId, classId, today]);
+      console.log(`[Attendify] Processed check-in for student ${studentId} (RFID: ${rfid})`);
+      
+    } else if (studentData.status.toLowerCase() === 'out') {
+      // For check-out, expect a timeOut field in the JSON data
+      const timeOut = studentData.timeOut;
+      if (!timeOut) {
+        console.warn(`[Attendify] Missing timeOut for student with RFID ${rfid} marked as Out`);
+        continue;
+      }
+      const checkOutQuery = `
+        UPDATE attendance 
+        SET time_out = ?, updated_at = NOW()
+        WHERE student_id = ? AND class_id = ? AND attendance_date = ? AND time_out IS NULL
+      `;
+      const [result] = await pool.execute(checkOutQuery, [timeOut, studentId, classId, today]);
+      console.log(`[Attendify] Processed check-out for student ${studentId} (RFID: ${rfid})`);
+      
+    } else {
+      console.warn(`[Attendify] Unknown status "${studentData.status}" for RFID ${rfid}`);
+    }
+  }
+}
+
+// Update setupChokidar to call processAttendanceData when data.json changes
+function setupChokidar(req) {
+  const ME = req.session?.user?.username || 'external';
+  console.log("working? setupChokidar");
+
+  chokidar.watch(dataPath).on('change', async () => {
+    const updatedData = readData();
+    console.log(`[Attendify] data.json changed! ${JSON.stringify(updatedData)}`);
+    console.log("data:", updatedData);
+    console.log("user:", ME);
+    
+    try {
+      await processAttendanceData(updatedData, ME);
+    } catch (err) {
+      console.error('[Attendify] Error processing attendance data:', err);
+    }
+    
+    io.emit('fileChanged', { data: updatedData, user: ME });
+  });
+}
+
+
 
 // prefilling, with cron
 async function prefillAttendance() {
@@ -192,3 +341,82 @@ httpServer.listen(port, () => {
 });
 
 cron.schedule('0 0 * * *', prefillAttendance); // Run daily at midnight
+
+// Endpoint to record student attendance (Time In / Time Out)
+app.post('/api/attendance', async (req, res) => {
+  const { studentId, status, timestamp } = req.body;
+  
+  if (!studentId || !status || !timestamp) {
+    return res.status(400).json({ message: 'Missing required fields: studentId, status, and timestamp' });
+  }
+
+  try {
+    // Use the ME variable (current instructor username from the session) as in your socket setup
+    const ME = req.session?.user?.username || 'external';
+
+    // Get current time details using moment-timezone (same as your instructor/ongoing endpoint)
+    const moment = require('moment-timezone');
+    const timezone = 'Asia/Manila';
+    const now = moment().tz(timezone);
+    const timeString = now.format('HH:mm:ss');
+    const dayName = now.format('ddd'); // Short day name e.g. "Mon", "Tue"
+    const today = now.format('YYYY-MM-DD');
+
+    // Get the ongoing class for the instructor (using ME)
+    const [ongoing_class] = await pool.execute(
+      `SELECT 
+          cm.class_id
+       FROM classes cm
+       WHERE cm.teacher_username = ? 
+         AND cm.day = ? 
+         AND ? BETWEEN cm.start_time AND cm.end_time
+       LIMIT 1`,
+      [ME, dayName, timeString]
+    );
+
+    if (ongoing_class.length === 0) {
+      return res.status(404).json({ message: `No ongoing class found for instructor ${ME}` });
+    }
+
+    const classId = ongoing_class[0].class_id;
+
+    if (status.toLowerCase() === 'in') {
+      // Record "Time In": Update the existing attendance record with the time_in value
+      const checkInQuery = `
+        UPDATE attendance 
+        SET time_in = ?, status = 'present', updated_at = NOW()
+        WHERE student_id = ? AND class_id = ? AND attendance_date = ?
+      `;
+      const [result] = await pool.execute(checkInQuery, [timestamp, studentId, classId, today]);
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Attendance record not found for check-in' });
+      }
+      
+      console.log(`[Attendify] Time in recorded for student ${studentId} in class ${classId} at ${timestamp}`);
+      return res.status(200).json({ message: 'Time in recorded successfully' });
+      
+    } else if (status.toLowerCase() === 'out') {
+      // Record "Time Out": Update the attendance record with the time_out value if not already set
+      const checkOutQuery = `
+        UPDATE attendance 
+        SET time_out = ?, updated_at = NOW()
+        WHERE student_id = ? AND class_id = ? AND attendance_date = ? AND time_out IS NULL
+      `;
+      const [result] = await pool.execute(checkOutQuery, [timestamp, studentId, classId, today]);
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'No valid check-in record found for check-out' });
+      }
+      
+      console.log(`[Attendify] Time out recorded for student ${studentId} in class ${classId} at ${timestamp}`);
+      return res.status(200).json({ message: 'Time out recorded successfully' });
+      
+    } else {
+      return res.status(400).json({ message: 'Invalid status value. Expected "In" or "Out".' });
+    }
+  } catch (error) {
+    console.error('[Attendify] Error recording attendance:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});

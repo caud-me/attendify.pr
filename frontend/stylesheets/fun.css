@@ -23,3 +23,11 @@ button:hover {
     background-size: 500% 500%;
     animation: moveGradient 2s linear infinite;
 }
+
+.centered {
+    text-align: center;
+}
+
+.justified > * {
+    text-align: justify;
+}

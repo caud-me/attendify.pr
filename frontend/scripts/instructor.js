@@ -2,11 +2,23 @@ document.addEventListener("DOMContentLoaded", function() {
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
 
     // Listen for real-time updates
-    socket.on('fileChanged', (data) => {
-        console.log('Updated data received:', data);
+    // socket.on('fileChanged', (data) => {
+    //     console.log('Updated data received:', data);
     
-        // Update the UI dynamically
-        document.getElementById('liveDataContainer').innerText = JSON.stringify(data, null, 2);
+    //     // Update the UI dynamically
+    //     document.getElementById('liveDataContainer').innerText = JSON.stringify(data, null, 2);
+    // });
+    socket.on('fileChanged', (payload) => {
+        const updatedData = payload.data;
+        const username = payload.user;
+    
+        console.log(`Data updated by ${username}:`, updatedData);
+    
+        // Construct the string in the desired format
+        const displayString = `data: ${JSON.stringify(updatedData, null, 2)}\nuser: ${username}`;
+    
+        // Update the UI
+        document.getElementById('liveDataContainer').innerText = displayString;
     });
     
     // Initialize month and year dropdowns
@@ -80,7 +92,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
                 Object.values(students).forEach(student => {
                     const row = document.createElement("tr");
-                    row.innerHTML = `<td>${index++}</td><td>${student.name}</td>`;
+                    row.innerHTML = `<td>${index++}</td>
+                    <td>
+                        <div>
+                            ${student.name}
+                            <div class="stub">${student.grade_section}</div>
+                        </div>
+                    
+                    </td>`;
                     for (let day = 1; day <= 31; day++) {
                         const status = student.attendance[day] || "";
                         let className = "";
