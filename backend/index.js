@@ -136,15 +136,37 @@ app.use('/admin', $requireRole(['admin']), adminRoutes);
 const dataPath = path.join(__dirname, '../data/data.json');
 
 // Function to read data from data.json
+// extensive checking
 function readData() {
   try {
-      const data = fs.readFileSync(dataPath, 'utf8');
-      return JSON.parse(data);
-  } catch (error) {
-      console.error("Error reading data.json:", error);
+    if (!fs.existsSync(dataPath)) {
+      console.error("[Attendify] data.json does not exist!");
       return {};
+    }
+
+    const rawData = fs.readFileSync(dataPath, 'utf8').trim(); // Trim extra spaces
+    console.log("[DEBUG] Raw data from data.json:", rawData);
+
+    if (!rawData) {
+      console.error("[Attendify] data.json is empty!");
+      return {};
+    }
+
+    const jsonData = JSON.parse(rawData);
+
+    if (typeof jsonData !== 'object' || Array.isArray(jsonData) || Object.keys(jsonData).length === 0) {
+      console.error("[Attendify] Invalid JSON format!");
+      return {};
+    }
+
+    return jsonData;
+  } catch (error) {
+    console.error("[Attendify] Error reading data.json:", error);
+    return {};
   }
 }
+
+
 
 // Function to write data to data.json
 function writeData(data) {
@@ -186,20 +208,120 @@ app.post('/api/updateData', (req, res) => {
 // });
 
 // Function to process attendance updates from data.json changes (using RFID as keys)
+// async function processAttendanceData(updatedData, ME) {
+//   const moment = require('moment-timezone');
+//   const timezone = 'Asia/Manila';
+//   const now = moment().tz(timezone);
+//   const today = now.format('YYYY-MM-DD');
+//   const timeString = now.format('HH:mm:ss');
+//   const dayName = now.format('ddd'); // e.g., "Mon", "Tue", etc.
+
+//   // Get the ongoing class for the current instructor (ME)
+//   const [ongoing_class] = await pool.execute(
+//     `SELECT class_id FROM classes 
+//      WHERE teacher_username = ? 
+//        AND day = ? 
+//        AND ? BETWEEN start_time AND end_time 
+//      LIMIT 1`,
+//     [ME, dayName, timeString]
+//   );
+
+//   if (ongoing_class.length === 0) {
+//     console.error(`[Attendify] No ongoing class found for instructor ${ME}`);
+//     return;
+//   }
+//   const classId = ongoing_class[0].class_id;
+//   console.log(`[Attendify] Found ongoing class ${classId} for instructor ${ME}`);
+
+//   // Use updatedData directly if it's keyed by RFID
+//   const attendanceRecords = updatedData.data ? updatedData.data : updatedData;
+//   if (Object.keys(attendanceRecords).length === 0) {
+//     console.error('[Attendify] No attendance data found in the updated file.');
+//     return;
+//   }
+  
+//   // Process each record using RFID as key
+//   for (const rfid in attendanceRecords) {
+//     const studentData = attendanceRecords[rfid];
+//     if (!studentData || !studentData.status || !studentData.timeIn) {
+//       console.warn(`[Attendify] Incomplete data for RFID ${rfid}`);
+//       continue;
+//     }
+    
+//     // Map RFID to student_id using your students table
+//     const [studentRows] = await pool.execute(
+//       `SELECT student_id FROM students WHERE rfid = ? LIMIT 1`,
+//       [rfid]
+//     );
+//     if (studentRows.length === 0) {
+//       console.warn(`[Attendify] No student found with RFID ${rfid}`);
+//       continue;
+//     }
+//     const studentId = studentRows[0].student_id;
+    
+//     if (studentData.status.toLowerCase() === 'in') {
+//       // Update the attendance record with time_in and mark as present
+//       const checkInQuery = `
+//         UPDATE attendance 
+//         SET time_in = ?, status = 'present', updated_at = NOW()
+//         WHERE student_id = ? AND class_id = ? AND attendance_date = ?
+//       `;
+//       const [result] = await pool.execute(checkInQuery, [studentData.timeIn, studentId, classId, today]);
+//       console.log(`[Attendify] Processed check-in for student ${studentId} (RFID: ${rfid})`);
+      
+//     } else if (studentData.status.toLowerCase() === 'out') {
+//       // For check-out, expect a timeOut field in the JSON data
+//       const timeOut = studentData.timeOut;
+//       if (!timeOut) {
+//         console.warn(`[Attendify] Missing timeOut for student with RFID ${rfid} marked as Out`);
+//         continue;
+//       }
+
+//       console.log(`[Attendify] Checking out: RFID ${rfid}, student ${studentId}, timeOut: ${timeOut}`);
+
+//       const checkOutQuery = `
+//         UPDATE attendance 
+//         SET time_out = ?, updated_at = NOW()
+//         WHERE student_id = ? AND class_id = ? AND attendance_date = ? AND time_out IS NULL
+//       `;
+//       const [result] = await pool.execute(checkOutQuery, [timeOut, studentId, classId, today]);
+//       console.log(`[Attendify] Processed check-out for student ${studentId} (RFID: ${rfid})`);
+      
+//     } else {
+//       console.warn(`[Attendify] Unknown status "${studentData.status}" for RFID ${rfid}`);
+//     }
+//   }
+// }
+function isValidAttendanceEntry(entry) {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof entry.timeIn === 'string' &&
+    typeof entry.status === 'string' &&
+    (entry.status.toLowerCase() !== 'out' || typeof entry.timeOut === 'string') // timeOut required if status is 'Out'
+  );
+}
+
+
 async function processAttendanceData(updatedData, ME) {
   const moment = require('moment-timezone');
   const timezone = 'Asia/Manila';
   const now = moment().tz(timezone);
   const today = now.format('YYYY-MM-DD');
   const timeString = now.format('HH:mm:ss');
-  const dayName = now.format('ddd'); // e.g., "Mon", "Tue", etc.
+  const dayName = now.format('ddd');
 
-  // Get the ongoing class for the current instructor (ME)
+  console.log("[Attendify] Raw updatedData received:", JSON.stringify(updatedData, null, 2));
+  console.log("[Attendify] Updated data.json content:", JSON.stringify(updatedData, null, 2));
+  console.log("[Attendify] Instructor username:", ME);
+
+
+  // Find ongoing class
   const [ongoing_class] = await pool.execute(
     `SELECT class_id FROM classes 
      WHERE teacher_username = ? 
        AND day = ? 
-       AND ? BETWEEN start_time AND end_time 
+       AND STR_TO_DATE(?, '%H:%i:%s') BETWEEN start_time AND end_time 
      LIMIT 1`,
     [ME, dayName, timeString]
   );
@@ -211,98 +333,209 @@ async function processAttendanceData(updatedData, ME) {
   const classId = ongoing_class[0].class_id;
   console.log(`[Attendify] Found ongoing class ${classId} for instructor ${ME}`);
 
-  // Use updatedData directly if it's keyed by RFID
-  const attendanceRecords = updatedData.data ? updatedData.data : updatedData;
-  if (Object.keys(attendanceRecords).length === 0) {
-    console.error('[Attendify] No attendance data found in the updated file.');
+  if (!updatedData || Object.keys(updatedData).length === 0) {
+    console.error("[Attendify] No attendance data found in the updated file.");
     return;
   }
+
+  for (const rfid in updatedData) {
+    const studentData = updatedData[rfid];
   
-  // Process each record using RFID as key
-  for (const rfid in attendanceRecords) {
-    const studentData = attendanceRecords[rfid];
-    if (!studentData || !studentData.status || !studentData.timeIn) {
-      console.warn(`[Attendify] Incomplete data for RFID ${rfid}`);
-      continue;
+    // 🔍 Validate the format before processing
+    if (!isValidAttendanceEntry(studentData)) {
+      console.error(`[Attendify] Invalid data format for key: ${rfid}`, studentData);
+      continue; // ⏭️ Skip invalid entries
     }
-    
-    // Map RFID to student_id using your students table
+  
+    // Proceed with normal attendance processing
     const [studentRows] = await pool.execute(
       `SELECT student_id FROM students WHERE rfid = ? LIMIT 1`,
       [rfid]
     );
+  
     if (studentRows.length === 0) {
       console.warn(`[Attendify] No student found with RFID ${rfid}`);
       continue;
     }
+  
     const studentId = studentRows[0].student_id;
-    
+  
     if (studentData.status.toLowerCase() === 'in') {
-      // Update the attendance record with time_in and mark as present
       const checkInQuery = `
         UPDATE attendance 
         SET time_in = ?, status = 'present', updated_at = NOW()
         WHERE student_id = ? AND class_id = ? AND attendance_date = ?
       `;
-      const [result] = await pool.execute(checkInQuery, [studentData.timeIn, studentId, classId, today]);
+      await pool.execute(checkInQuery, [studentData.timeIn, studentId, classId, today]);
       console.log(`[Attendify] Processed check-in for student ${studentId} (RFID: ${rfid})`);
-      
+  
     } else if (studentData.status.toLowerCase() === 'out') {
-      // For check-out, expect a timeOut field in the JSON data
       const timeOut = studentData.timeOut;
       if (!timeOut) {
         console.warn(`[Attendify] Missing timeOut for student with RFID ${rfid} marked as Out`);
         continue;
       }
-
+  
       console.log(`[Attendify] Checking out: RFID ${rfid}, student ${studentId}, timeOut: ${timeOut}`);
-
+  
       const checkOutQuery = `
         UPDATE attendance 
         SET time_out = ?, updated_at = NOW()
         WHERE student_id = ? AND class_id = ? AND attendance_date = ? AND time_out IS NULL
       `;
-      const [result] = await pool.execute(checkOutQuery, [timeOut, studentId, classId, today]);
+      await pool.execute(checkOutQuery, [timeOut, studentId, classId, today]);
       console.log(`[Attendify] Processed check-out for student ${studentId} (RFID: ${rfid})`);
-      
     } else {
       console.warn(`[Attendify] Unknown status "${studentData.status}" for RFID ${rfid}`);
     }
   }
+  
 }
 
+
 // Update setupChokidar to call processAttendanceData when data.json changes
+// function setupChokidar(req) {
+//   const ME = req.session?.user?.username || 'external';
+//   console.log("working? setupChokidar");
+
+//   chokidar.watch(dataPath).on('change', async () => {
+//     const updatedData = readData();
+//     console.log(`[Attendify] data.json changed! ${JSON.stringify(updatedData)}`);
+//     console.log("data:", updatedData);
+//     console.log("user:", ME);
+    
+//     try {
+//       await processAttendanceData(updatedData, ME);
+//     } catch (err) {
+//       console.error('[Attendify] Error processing attendance data:', err);
+//     }
+    
+//     io.emit('fileChanged', { data: updatedData, user: ME });
+//   });
+// }
+
+function isValidTimestamp(timestamp) {
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timestamp.trim()); // Trim spaces
+}
+
+
+function isValidDataStructure(data) {
+  if (typeof data !== 'object' || Array.isArray(data)) return false;
+
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof key !== 'string' || !/^[A-F0-9]{2} [A-F0-9]{2} [A-F0-9]{2} [A-F0-9]{2}$/.test(key)) {
+      console.error(`[Attendify] Invalid key format: ${key}`);
+      return false;
+    }
+
+    if (
+      typeof value !== 'object' ||
+      !value.timeIn ||
+      !isValidTimestamp(value.timeIn) ||
+      !["In", "Out"].includes(value.status) ||  // ✅ Allow both "In" and "Out"
+      (value.timeOut && !isValidTimestamp(value.timeOut))
+    ) {
+      console.error(`[Attendify] Invalid data format for key: ${key}`, value);
+      return false;
+    }
+    
+  }
+  return true;
+}
+
+// function setupChokidar(req) {
+//   const ME = req.session?.user?.username || 'external';
+//   console.log("working? setupChokidar");
+
+//   if (!fs.existsSync(dataPath)) {
+//     console.error(`[Attendify] Error: data.json not found at ${dataPath}`);
+//     return;
+//   }
+
+//   try {
+//     const initialData = readData();
+//     if (!isValidDataStructure(initialData)) {
+//       throw new Error("Invalid data.json format");
+//     }
+//   } catch (error) {
+//     console.error(`[Attendify] Error reading/parsing data.json:`, error);
+//     return;
+//   }
+
+//   chokidar.watch(dataPath).on('change', async () => {
+//   const updatedData = readData();
+
+//   if (!updatedData || Object.keys(updatedData).length === 0) {
+//     console.error(`[Attendify] Skipping processing: data.json is empty.`);
+//     return;
+//   }
+
+//   if (!isValidDataStructure(updatedData)) {
+//     console.error(`[Attendify] Invalid format detected in updated data.json`);
+//     return;
+//   }
+
+//   });
+// }
+
+
+
+
+// prefilling, with cron
 function setupChokidar(req) {
   const ME = req.session?.user?.username || 'external';
   console.log("working? setupChokidar");
 
+  if (!fs.existsSync(dataPath)) {
+    console.error(`[Attendify] Error: data.json not found at ${dataPath}`);
+    return;
+  }
+
   chokidar.watch(dataPath).on('change', async () => {
+    console.log("[Attendify] Detected change in data.json, processing...");
+
     const updatedData = readData();
+
+    if (!updatedData || Object.keys(updatedData).length === 0) {
+      console.warn(`[Attendify] Skipping processing: data.json is empty.`);
+      io.emit('fileChanged', { data: {}, user: ME }); // 🔥 Ensure UI updates even if data is empty
+      return;
+    }
+
+    if (!isValidDataStructure(updatedData)) {
+      console.error(`[Attendify] Invalid format detected in updated data.json`);
+      io.emit('fileChanged', { data: {}, user: ME }); // 🔥 Ensure UI gets an empty update
+      return;
+    }
+
     console.log(`[Attendify] data.json changed! ${JSON.stringify(updatedData)}`);
     console.log("data:", updatedData);
     console.log("user:", ME);
-    
+
     try {
       await processAttendanceData(updatedData, ME);
     } catch (err) {
       console.error('[Attendify] Error processing attendance data:', err);
     }
-    
-    io.emit('fileChanged', { data: updatedData, user: ME });
+
+    io.emit('fileChanged', { data: updatedData, user: ME }); // 🔥 Ensure UI updates!
   });
 }
 
 
-
-// prefilling, with cron
 async function prefillAttendance() {
   try {
       console.log(`[Attendify] Starting attendance prefill process at ${new Date().toISOString()}`);
 
       // 1. Archive current attendance records into attendance_history
       const archiveQuery = `
-          INSERT INTO attendance_history (attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark)
-          SELECT attendance_id, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark
+          INSERT INTO attendance_history (
+              attendance_id, student_id, class_id, attendance_date, status,
+              time_in, time_out, recorded_by, remark, archived_at
+          )
+          SELECT 
+              attendance_id, student_id, class_id, attendance_date, status,
+              time_in, time_out, recorded_by, remark, NOW()
           FROM attendance
       `;
       await pool.execute(archiveQuery);
@@ -336,7 +569,8 @@ async function prefillAttendance() {
 }
 
 
-// prefillAttendance()
+
+prefillAttendance()
 
 // Start server
 httpServer.listen(port, () => {
