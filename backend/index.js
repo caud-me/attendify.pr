@@ -254,6 +254,9 @@ async function processAttendanceData(updatedData, ME) {
         console.warn(`[Attendify] Missing timeOut for student with RFID ${rfid} marked as Out`);
         continue;
       }
+
+      console.log(`[Attendify] Checking out: RFID ${rfid}, student ${studentId}, timeOut: ${timeOut}`);
+
       const checkOutQuery = `
         UPDATE attendance 
         SET time_out = ?, updated_at = NOW()
@@ -333,7 +336,7 @@ async function prefillAttendance() {
 }
 
 
-
+// prefillAttendance()
 
 // Start server
 httpServer.listen(port, () => {

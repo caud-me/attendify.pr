@@ -1,4 +1,33 @@
 document.addEventListener("DOMContentLoaded", function() {
+    function convertTo12Hour(time24) {
+        if (!time24) return '';
+        
+        try {
+            const [hours24, minutes] = time24.split(':');
+            let period = 'AM';
+            let hours12 = parseInt(hours24);
+    
+            if (hours12 >= 12) {
+                period = 'PM';
+                if (hours12 > 12) {
+                    hours12 -= 12;
+                }
+            }
+            if (hours12 === 0) {
+                hours12 = 12;
+            }
+    
+            return `${hours12}:${minutes} ${period}`;
+        } catch (error) {
+            console.error('Error converting time:', error);
+            console.log('Original time:', time24, 'attempted');
+            return time24; // Return original if conversion fails
+        }
+    }
+    function formatName(name) {
+        return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
 
     // Listen for real-time updates
@@ -18,7 +47,9 @@ document.addEventListener("DOMContentLoaded", function() {
         const displayString = `data: ${JSON.stringify(updatedData, null, 2)}\nuser: ${username}`;
     
         // Update the UI
+        instructors_ongoing()
         document.getElementById('liveDataContainer').innerText = displayString;
+        document.getElementById('liveDataContainer').classList.add('hidden');
     });
     
     // Initialize month and year dropdowns
@@ -94,11 +125,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     const row = document.createElement("tr");
                     row.innerHTML = `<td>${index++}</td>
                     <td>
-                        <div>
-                            ${student.name}
-                            <div class="stub">${student.grade_section}</div>
-                        </div>
-                    
+                        <b>${formatName(student.name)}</b>        
                     </td>`;
                     for (let day = 1; day <= 31; day++) {
                         const status = student.attendance[day] || "";
@@ -228,8 +255,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             <p>${scheduleItem.course_name}</p>
                             <div class="stub">${scheduleItem.grade_section}</div>
                         </td>
-                        <td>${scheduleItem.start_time}</td>
-                        <td>${scheduleItem.end_time}</td>
+                        <td>${convertTo12Hour(scheduleItem.start_time)}</td>
+                        <td>${convertTo12Hour(scheduleItem.end_time)}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -264,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         </div>
                         <div>
                             <div id="widget_ongoing_course">${data.class.subject}</div>
-                            <div id="widget_ongoing_schedule">${data.class.start_time} to ${data.class.end_time}</div>
+                            <div id="widget_ongoing_schedule">${convertTo12Hour(data.class.start_time)} to ${convertTo12Hour(data.class.end_time)}</div>
                         </div>
                     `;
                 } else {
@@ -280,16 +307,18 @@ document.addEventListener("DOMContentLoaded", function() {
                             return `
                                 <tr class="${hasRemark}">
                                     <td>${index + 1}</td>
-                                    <td>${student.full_name}</td>
+                                    <td><b>${formatName(student.full_name)}</b></td>
                                     <td>
                                         <div class="respect3">
-                                            <p>${student.status.charAt(0).toUpperCase() + student.status.slice(1).toLowerCase()}</p>
+                                            <p class=${student.status}>${student.status.charAt(0).toUpperCase() + student.status.slice(1).toLowerCase()}</p>
                                             <a href="#" class="remark-btn" data-studentid="${student.student_id}" data-studentname="${student.full_name}">Flag</a>
                                         </div>
                                     </td>
-                                    <td>${student.time_in || 'Not Present'}</td>
+                                    <td>${student.time_in ? convertTo12Hour(student.time_in) : 'Not Present'}</td>
+                                    <td>${student.time_out ? convertTo12Hour(student.time_out) : 'Not Present'}</td>
                                     <td>${student.grade_section}</td>
                                     <td>${student.student_id}</td>
+                                    <td>${student.remark || 'No remarks'}</td>
                                 </tr>
                             `;
                         }).join('');

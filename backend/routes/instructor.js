@@ -105,6 +105,7 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
               s.grade_section, 
               a.status,
               a.time_in,
+              a.time_out, 
               a.remark
           FROM students s
           JOIN student_classes sc ON s.student_id = sc.student_id
@@ -301,81 +302,125 @@ router.post('/add-remark', $requireRole(['teacher']), async (req, res) => {
 });
 
 router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => {
+  const username = req.session.user.username;
+  const { month, year } = req.query; // Get query params
+
+  if (!month || !year) {
+      return res.status(400).json({ message: "Month and year are required." });
+  }
+
+  const timezone = 'Asia/Manila';
+  const now = moment().tz(timezone);
+  const dayName = now.format('ddd');
+  const timeString = now.format('HH:mm:ss');
+
   try {
-    const { month, year } = req.query;
-    const username = req.session.user.username;
+      // Find the currently ongoing class for the instructor
+      const [ongoing_class] = await $pool.execute(
+          `SELECT class_id, course_code, grade_section FROM classes 
+           WHERE teacher_username = ? 
+           AND day = ? 
+           AND ? BETWEEN start_time AND end_time`,
+          [username, dayName, timeString]
+      );
 
-    if (!month || !year) {
-      return res.status(400).json({ message: 'Month and year are required' });
-    }
+      if (ongoing_class.length === 0) {
+          return res.status(404).json({ message: "No ongoing class found." });
+      }
 
-    const [result] = await $pool.execute(`
-      SELECT 
-          ah.attendance_id,
-          ah.student_id,
-          s.full_name,
-          ah.class_id,
-          ah.attendance_date,
-          ah.status,
-          ah.time_in,
-          ah.time_out,
-          ah.recorded_by,
-          ah.archived_at,
-          ah.remark
-      FROM attendance_history ah
-      JOIN students s ON ah.student_id = s.student_id
-      WHERE DATE_FORMAT(ah.attendance_date, '%Y-%m') = ?
-      ORDER BY ah.attendance_date, ah.student_id;
-    `, [`${year}-${month.padStart(2, '0')}`]);
+      const class_id = ongoing_class[0].class_id;
 
-    res.json(result);
+      // Fetch attendance history for the specified month and year
+      const [attendanceRecords] = await $pool.execute(
+          `SELECT 
+              s.student_id, 
+              s.full_name, 
+              a.attendance_date, 
+              COALESCE(a.status, 'absent') AS status, 
+              a.time_in, 
+              a.remark 
+           FROM students s
+           JOIN student_classes sc ON s.student_id = sc.student_id
+           LEFT JOIN attendance a 
+              ON s.student_id = a.student_id 
+              AND a.class_id = ? 
+              AND MONTH(a.attendance_date) = ? 
+              AND YEAR(a.attendance_date) = ?
+           WHERE sc.class_id = ?
+           ORDER BY a.attendance_date, s.full_name`,
+          [class_id, moment().month(month).format('M'), year, class_id]
+      );
+
+      res.json(attendanceRecords);
+
   } catch (error) {
-    console.error('[Attendify] Error fetching monthly attendance:', error);
-    res.status(500).json({ message: 'Internal server error' });
+      console.error("Error fetching monthly attendance:", error);
+      res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.get('/downloadMonthlyAttendance', $requireRole(['teacher']), async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    const username = req.session.user.username;
+router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req, res) => {
+  const username = req.session.user.username;
+  const { month, year } = req.query;
 
-    if (!month || !year) {
-      return res.status(400).json({ message: 'Month and year are required' });
-    }
-
-    const [result] = await $pool.execute(`
-      SELECT 
-          ah.attendance_id,
-          ah.student_id,
-          s.full_name,
-          ah.class_id,
-          ah.attendance_date,
-          ah.status,
-          ah.time_in,
-          ah.time_out,
-          ah.recorded_by,
-          ah.archived_at,
-          ah.remark
-      FROM attendance_history ah
-      JOIN students s ON ah.student_id = s.student_id
-      WHERE DATE_FORMAT(ah.attendance_date, '%Y-%m') = ?
-      ORDER BY ah.attendance_date, ah.student_id;
-    `, [`${year}-${month.padStart(2, '0')}`]);
-
-    const worksheet = xlsx.utils.json_to_sheet(result);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Monthly Attendance");
-
-    const filePath = path.join(__dirname, `[Attendify] Monthly Attendance ${year}-${month.padStart(2, '0')}.xlsx`);
-    xlsx.writeFile(workbook, filePath);
-
-    res.download(filePath);
-  } catch (error) {
-    console.error('[Attendify] Error fetching monthly attendance:', error);
-    res.status(500).json({ message: 'Internal server error' });
+  if (!month || !year) {
+      return res.status(400).json({ message: "Month and year are required." });
   }
-});
+
+  const timezone = 'Asia/Manila';
+  const now = moment().tz(timezone);
+  const dayName = now.format('ddd');
+  const timeString = now.format('HH:mm:ss');
+
+  try {
+      const [ongoing_class] = await $pool.execute(
+          `SELECT class_id, course_code, grade_section FROM classes 
+           WHERE teacher_username = ? 
+           AND day = ? 
+           AND ? BETWEEN start_time AND end_time`,
+          [username, dayName, timeString]
+      );
+
+      if (ongoing_class.length === 0) {
+          return res.status(404).json({ message: "No ongoing class found." });
+      }
+
+      const class_id = ongoing_class[0].class_id;
+
+      const [attendanceRecords] = await $pool.execute(
+          `SELECT 
+              s.student_id, 
+              s.full_name, 
+              a.attendance_date, 
+              COALESCE(a.status, 'absent') AS status, 
+              a.time_in, 
+              a.remark 
+           FROM students s
+           JOIN student_classes sc ON s.student_id = sc.student_id
+           LEFT JOIN attendance a 
+              ON s.student_id = a.student_id 
+              AND a.class_id = ? 
+              AND MONTH(a.attendance_date) = ? 
+              AND YEAR(a.attendance_date) = ?
+           WHERE sc.class_id = ?
+           ORDER BY a.attendance_date, s.full_name`,
+          [class_id, moment().month(month).format('M'), year, class_id]
+      );
+
+      const worksheet = xlsx.utils.json_to_sheet(attendanceRecords);
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Monthly Attendance");
+
+      const filePath = path.join(__dirname, `[Attendify] Monthly Attendance of ${username}.xlsx`);
+      xlsx.writeFile(workbook, filePath);
+
+      res.download(filePath);
+
+  } catch (error) {
+      console.error("Error fetching monthly attendance:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+})
 
 
 
