@@ -18,7 +18,11 @@ router.get('/api', $requireRole(['admin']), async (req, res) => {
     const [students] = await $pool.execute(`SELECT * FROM students ORDER BY rfid_no`);
     const [student_classes] = await $pool.execute(`SELECT * FROM student_classes`);
     const [courses] = await $pool.execute(`SELECT * FROM courses`);
-    const [classes] = await $pool.execute(`SELECT * FROM classes`);
+    const [classes] = await $pool.execute(`
+      SELECT classes.*, courses.course_name 
+      FROM classes
+      JOIN courses ON classes.course_code = courses.course_code
+  `);  
     const [attendance_history] = await $pool.execute(`SELECT * FROM attendance_history`);
     const [attendance] = await $pool.execute(`SELECT * FROM attendance`);
 

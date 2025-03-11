@@ -29,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
-
     // Listen for real-time updates
     // socket.on('fileChanged', (data) => {
     //     console.log('Updated data received:', data);
@@ -37,20 +36,32 @@ document.addEventListener("DOMContentLoaded", function() {
     //     // Update the UI dynamically
     //     document.getElementById('liveDataContainer').innerText = JSON.stringify(data, null, 2);
     // });
-    socket.on('fileChanged', (payload) => {
+    socket.on("fileChanged", (payload) => {
         const updatedData = payload.data;
-        const username = payload.user;
     
-        console.log(`Data updated by ${username}:`, updatedData);
+        // Get the first (and only) key-value pair from the data
+        const rfidNumber = Object.keys(updatedData)[0];
+        const studentData = updatedData[rfidNumber];
     
-        // Construct the string in the desired format
-        const displayString = `data: ${JSON.stringify(updatedData, null, 2)}\nuser: ${username}`;
+        if (studentData && studentData.timeIn && studentData.status) {
+            const timeIn = studentData.timeIn.split(" ")[1]; // Extract just the time part
+            const status = studentData.status === "In" ? "PRESENT" : "LATE";
     
-        // Update the UI
-        instructors_ongoing()
-        document.getElementById('liveDataContainer').innerText = displayString;
-        document.getElementById('liveDataContainer').classList.add('hidden');
+            const displayUpdate = document.getElementById("displayUpdate");
+            if (displayUpdate) {
+                // ✅ Directly set textContent (no extra elements!)
+                displayUpdate.textContent = `[Attendify] Student ${rfidNumber} checked in at ${timeIn} → Marked as ${status}`;
+    
+                // Optional: Clear message after 5 seconds
+                setTimeout(() => {
+                    displayUpdate.textContent = "";
+                }, 5000);
+            }
+        }
+    
+        instructors_ongoing();
     });
+    
     
     // Initialize month and year dropdowns
     const monthDropdown = document.getElementById("month");

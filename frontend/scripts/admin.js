@@ -101,13 +101,13 @@ async function admins_api() {
     adminTableClasses.innerHTML += `
       <tr>
         <td>${index + 1}</td>
-        <td>${eachData.class_id}</td>
-        <td>${eachData.course_code}</td>
-        <td>${eachData.grade_section}</td>
         <td>${eachData.teacher_username}</td>
+        <td>${eachData.grade_section}</td>
+        <td>${eachData.course_name} - ${eachData.course_code}</td>
         <td>${eachData.day}</td>
         <td>${eachData.start_time}</td>
         <td>${eachData.end_time}</td>
+        <td>${eachData.class_id}</td>
       </tr>
     `;
   });

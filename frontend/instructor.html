@@ -26,7 +26,14 @@
             <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
             <h4>Welcome to</h4>
             <h1 class="colorfull">Attendify!</h1>
-            <p>If you are familiar with using Notion, you'll definitely feel at home, There were no frameworks used, to ensure lightness of the site :></p>
+            <p>Your smart and simple way to track attendance effortlessly.<br><br>
+                ✅ Real-time attendance tracking<br>
+                ✅ Powerful insights at your fingertips<br>
+                ✅ Instructors can send flags to facilitators<br>
+                ✅ Export attendance and insights with ease<br><br>
+                Let's get started! 🚀
+                </p>
+                
             <button onclick="dismissBanner()">Got it, Thanks!</button>
         </section>
 
@@ -49,6 +56,7 @@
                     </div>
                 </div>
                 <h3>Live Student Monitoring</h3>
+                <p id="liveDataContainer"></p>
                 <p>As soon as the student scans during your class, the data will be recorded here in realtime. You can get a copy of todays attendance <a href="instructor/downloadStudentAttendanceToday">here</a></p>
                 <div class="colorfulll liner"></div>
                 <div class="displayTable">
@@ -155,6 +163,7 @@
         </div>
     </main>
 
+    <div id="displayUpdate" class="popup wrapped"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="scripts/instructor.js"></script>

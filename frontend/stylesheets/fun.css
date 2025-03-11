@@ -23,14 +23,6 @@ button {
     transition: all 0.3s ease;
 }
 
-button:hover {
-    background: linear-gradient(135deg,#eb17e8, #5E17EB, #8A4FFF, #00C7BE, #007AFF, #5E17EB, #eb17e8);
-    background-size: 400% 400%;
-    animation: smoothGradient 8s ease infinite;
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(94, 23, 235, 0.5);
-}
-
 .centered {
     text-align: center;
 }

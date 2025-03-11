@@ -322,6 +322,7 @@ form.signIn {
     border-bottom: 1px solid var(--ui-grayTranslucent1);
     display: flex;
     overflow-x: auto;
+    margin-bottom: 1rem;
 }
 
 .tab-button {
@@ -550,9 +551,6 @@ main {
         border-radius: var(--radius-md);
         transition: var(--transition-smooth);
     }
-    & > *:hover {
-        box-shadow: var(--shadow-md);
-    }
 }
 
 @media screen and (max-width:768px) {
@@ -751,4 +749,38 @@ input:checked + .slider:before {
 
 b {
     font-weight: 500;
+}
+
+.left {
+    display: inline-flex;
+    text-align: start;
+}
+
+.popup {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    font-family: 'Segoe UI Variable Text';
+    transition: .5s cubic-bezier(0.075, 0.82, 0.165, 1);
+    backdrop-filter: blur(10px);
+}
+
+/* Adjust position for tablets */
+@media (max-width: 768px) {
+    .popup {
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* Adjust position for mobile devices */
+@media (max-width: 480px) {
+    .popup {
+        top: 5px;
+        right: 5px;
+        left: 5px; /* Centering for small screens */
+        width: auto; /* Allows the width to adjust based on content */
+        max-width: 90%; /* Prevents it from taking the full screen */
+    }
 }
