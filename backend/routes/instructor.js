@@ -99,19 +99,26 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
       const class_id = ongoing_class[0].class_id; // Now it's safe to access index 0
 
       const [ongoing_students] = await $pool.execute(
-          `SELECT 
-              s.student_id,
-              s.full_name,
-              s.grade_section, 
-              a.status,
-              a.time_in,
-              a.time_out, 
-              a.remark
-          FROM students s
-          JOIN student_classes sc ON s.student_id = sc.student_id
-          LEFT JOIN attendance a ON s.student_id = a.student_id AND a.class_id = ? AND a.attendance_date = ?
-          WHERE sc.class_id = ?
-          ORDER BY CASE WHEN s.grade_section IS NULL THEN 1 ELSE 0 END, s.grade_section;`,
+          `
+            SELECT 
+                s.student_id,
+                s.full_name,
+                s.grade_section, 
+                a.status,
+                a.time_in,
+                a.time_out, 
+                a.remark
+            FROM students s
+            JOIN student_classes sc ON s.student_id = sc.student_id
+            LEFT JOIN attendance a ON s.student_id = a.student_id 
+                AND a.class_id = ? 
+                AND a.attendance_date = ?
+            WHERE sc.class_id = ?
+            ORDER BY 
+                CASE WHEN s.grade_section IS NULL THEN 1 ELSE 0 END, 
+                s.grade_section ASC, 
+                s.full_name ASC;
+          `,
           [class_id, dateString, class_id]
       );
 
@@ -135,15 +142,72 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
   }
 });
 
+// router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (req, res) => {
+//   const username = req.session.user.username;
+
+//   const timezone = 'Asia/Manila';
+//   const now = moment().tz(timezone);
+//   const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
+//   const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
+
+//   const [result] = await $pool.execute(
+//       `SELECT 
+//           s.student_id, 
+//           s.full_name, 
+//           s.grade_section, 
+//           a.status, 
+//           a.time_in, 
+//           a.remark 
+//       FROM students s
+//       JOIN student_classes sc ON s.student_id = sc.student_id
+//       LEFT JOIN attendance a ON s.student_id = a.student_id
+//       WHERE sc.class_id IN (
+//           SELECT class_id FROM classes WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
+//       )
+//       AND a.attendance_date = ?
+//       ORDER BY s.grade_section, s.full_name;
+//       `,
+//       [username, dayName, now.format('HH:mm:ss'), dateString]
+//   );
+
+//   console.log("📊 Attendance data:", result);
+//   const worksheet = xlsx.utils.json_to_sheet(result);
+//   const workbook = xlsx.utils.book_new();
+//   xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Today");
+
+//   const filePath = path.join(__dirname, `[Attendify] Student Attendance Today.xlsx`);
+//   xlsx.writeFile(workbook, filePath);
+
+//   res.download(filePath);
+// });
 router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (req, res) => {
-  const username = req.session.user.username;
-
-  const timezone = 'Asia/Manila';
-  const now = moment().tz(timezone);
-  const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
-  const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
-
-  const [result] = await $pool.execute(
+    const username = req.session.user.username;
+  
+    const timezone = 'Asia/Manila';
+    const now = moment().tz(timezone);
+    const dateString = now.format('YYYY-MM-DD');
+    const dayName = now.format('ddd');
+    const currentTime = now.format('HH:mm:ss');
+  
+    // First, get the current class information
+    const [currentClass] = await $pool.execute(
+      `SELECT class_id, course_code, grade_section, start_time, end_time 
+       FROM classes 
+       WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
+       LIMIT 1`,
+      [username, dayName, currentTime]
+    );
+  
+    if (!currentClass.length) {
+      return res.status(404).send('No active class found at this time.');
+    }
+    
+    const classId = currentClass[0].class_id;
+    const courseCode = currentClass[0].course_code;
+    const gradeSection = currentClass[0].grade_section;
+  
+    // Then get students and their attendance for this specific class
+    const [result] = await $pool.execute(
       `SELECT 
           s.student_id, 
           s.full_name, 
@@ -152,27 +216,26 @@ router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (
           a.time_in, 
           a.remark 
       FROM students s
-      JOIN student_classes sc ON s.student_id = sc.student_id
-      LEFT JOIN attendance a ON s.student_id = a.student_id
-      WHERE sc.class_id IN (
-          SELECT class_id FROM classes WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
-      )
-      AND a.attendance_date = ?
-      ORDER BY s.grade_section, s.full_name;
-      `,
-      [username, dayName, now.format('HH:mm:ss'), dateString]
-  );
+      JOIN student_classes sc ON s.student_id = sc.student_id AND sc.class_id = ?
+      LEFT JOIN attendance a ON s.student_id = a.student_id 
+        AND a.attendance_date = ? 
+        AND a.class_id = ?
+      ORDER BY s.grade_section, s.full_name`,
+      [classId, dateString, classId]
+    );
+  
+    console.log("📊 Attendance data:", result);
+    
+    const worksheet = xlsx.utils.json_to_sheet(result);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, `${courseCode} - ${gradeSection}`);
+  
+    const filePath = path.join(__dirname, `[Attendify] ${courseCode} ${gradeSection} Attendance ${dateString}.xlsx`);
+    xlsx.writeFile(workbook, filePath);
+  
+    res.download(filePath);
+  });
 
-  console.log("📊 Attendance data:", result);
-  const worksheet = xlsx.utils.json_to_sheet(result);
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Attendance Today");
-
-  const filePath = path.join(__dirname, `[Attendify] Student Attendance Today.xlsx`);
-  xlsx.writeFile(workbook, filePath);
-
-  res.download(filePath);
-});
 
 router.get('/downloadTodayScheduleOfTeacher', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;

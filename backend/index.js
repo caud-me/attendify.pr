@@ -270,8 +270,14 @@ async function processAttendanceData(updatedData, ME) {
     const studentId = studentRows[0].student_id;
 
     if (studentData.status.toLowerCase() === 'in') {
-      const studentTimeIn = moment(studentData.timeIn, "HH:mm:ss");
+      // const studentTimeIn = moment(studentData.timeIn, "HH:mm:ss");
+      const studentTimeIn = moment(studentData.timeIn, "YYYY-MM-DD HH:mm:ss").tz(timezone);
       const lateThreshold = classStartTime.clone().add(15, "minutes");
+      console.log(studentTimeIn, lateThreshold)
+      console.log(`[Attendify] Class start time: ${classStartTime.format("HH:mm:ss")}`);
+      console.log(`[Attendify] Late threshold: ${lateThreshold.format("HH:mm:ss")}`);
+      console.log(`[Attendify] Student time in: ${studentTimeIn.format("HH:mm:ss")}`);
+      console.log(`[Attendify] Is student after threshold? ${studentTimeIn.isAfter(lateThreshold)}`);
 
       // Determine attendance status
       const attendanceStatus = studentTimeIn.isAfter(lateThreshold) ? "late" : "present";

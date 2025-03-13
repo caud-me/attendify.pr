@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000">
+  <!-- Dark/Light mode dynamic styling -->
+  <style>
+    .logo {
+      fill: #808080;
+    }
+  </style>
+  
+  <!-- Simplified shape using minimal points -->
+  <path class="logo" d="
+    M565 0 
+    L794 0 
+    C826 0 851 23 856 52
+    L580 940
+    C574 960 559 975 540 981
+    L449 981
+    L39 981
+    C5 964 -10 920 10 885
+    L514 14
+    C523 0 536 -10 551 -15
+    Z
+    M873 71
+    L1124 874
+    C1125 878 1126 883 1127 887
+    L1122 895
+    C1107 915 1080 925 1054 917
+    L1040 911
+    L758 747
+    C745 732 739 712 744 692
+    Z" />
+</svg>

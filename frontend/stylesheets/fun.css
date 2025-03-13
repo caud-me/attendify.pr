@@ -1,5 +1,5 @@
 .colorfull {
-    background: linear-gradient(135deg, #5E17EB, #8A4FFF, #00C7BE, #007AFF, #5E17EB);
+    background: linear-gradient(135deg, #a117eb, #cab0ff, #6f00ff, #2500ac, #2b2b2b);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -8,9 +8,9 @@
 }
 
 .colorfulll {
-    background: linear-gradient(135deg, #5E17EB, #8A4FFF, #00C7BE, #007AFF, #5E17EB);
+    background: linear-gradient(135deg, #a117eb, #cab0ff, #6f00ff, #2500ac, #2b2b2b);
     background-size: 400% 400%;
-    animation: smoothGradient 8s ease infinite;
+    animation: smoothGradient 4s ease infinite;
 }
 
 @keyframes smoothGradient {

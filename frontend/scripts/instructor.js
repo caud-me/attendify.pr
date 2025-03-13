@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const displayUpdate = document.getElementById("displayUpdate");
             if (displayUpdate) {
                 // ✅ Directly set textContent (no extra elements!)
-                displayUpdate.textContent = `[Attendify] Student ${rfidNumber} checked in at ${timeIn} → Marked as ${status}`;
+                displayUpdate.textContent = `[Attendify] Scanned`;
     
                 // Optional: Clear message after 5 seconds
                 setTimeout(() => {
@@ -61,6 +61,39 @@ document.addEventListener("DOMContentLoaded", function() {
     
         instructors_ongoing();
     });
+
+    // socket.on("fileChanged", (payload) => {
+    //     const updatedData = payload.data;
+    
+    //     Object.entries(updatedData).forEach(([rfidNumber, studentData]) => {
+    //         if (studentData && studentData.timeIn && studentData.status) {
+    //             const timeIn = studentData.timeIn.split(" ")[1]; // Extract just the time part
+    //             const status = studentData.status === "In" ? "PRESENT" : "LATE";
+    
+    //             const displayUpdate = document.getElementById(`displayUpdate`);
+                
+    //             if (!displayUpdate) {
+    //                 // If element doesn't exist, create a new one
+    //                 const newDisplay = document.createElement("div");
+    //                 newDisplay.id = `displayUpdate-${rfidNumber}`;
+    //                 newDisplay.textContent = `[Attendify] ${rfidNumber} Scanned (${status} at ${timeIn})`;
+    //                 document.body.appendChild(newDisplay); // Append it somewhere relevant
+    //             } else {
+    //                 // Update existing element
+    //                 displayUpdate.textContent = `[Attendify] ${rfidNumber} Scanned (${status} at ${timeIn})`;
+    //             }
+    
+    //             // Optional: Clear message after 5 seconds
+    //             setTimeout(() => {
+    //                 const elem = document.getElementById(`displayUpdate-${rfidNumber}`);
+    //                 if (elem) elem.textContent = "";
+    //             }, 5000);
+    //         }
+    //     });
+    
+    //     instructors_ongoing();
+    // });
+    
     
     
     // Initialize month and year dropdowns

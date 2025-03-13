@@ -13,6 +13,7 @@
 <body>
     <main>
         <header>
+            <img src="resources/attendify - logo.svg" alt="" srcset="" height="48px" width="48px">
             <h1><span id="instructor_full_name"></span></h1>
             <div class="respect">
                 <img src="resources/verified.svg" alt="" srcset="">
@@ -24,16 +25,17 @@
 
         <section id="banner" class="banner prompting wrapped">
             <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
-            <h4>Welcome to</h4>
+            <!-- <h4>Welcome to</h4> -->
+            <h4 class="colorfull">MAWD 12 Presents...</h4>
             <h1 class="colorfull">Attendify!</h1>
-            <p>Your smart and simple way to track attendance effortlessly.<br><br>
+            <p>Your simple way to track attendance effortlessly.</p>
+            <p class="left">
                 ✅ Real-time attendance tracking<br>
                 ✅ Powerful insights at your fingertips<br>
                 ✅ Instructors can send flags to facilitators<br>
-                ✅ Export attendance and insights with ease<br><br>
-                Let's get started! 🚀
-                </p>
-                
+                ✅ Export attendance and insights with ease
+            </p>
+            <p>Let's get started! 🚀</p>
             <button onclick="dismissBanner()">Got it, Thanks!</button>
         </section>
 
@@ -122,7 +124,8 @@
 
                 <select id="year" name="year" title="year"></select>
             </div>
-            <div class="displayTable">
+            <p>Not enough data to show</p>
+            <div class="displayTable hidden">
                 <table class="attendance-table">
                     <thead>
                         <tr id="attendanceHeader">
