@@ -312,29 +312,6 @@ async function processAttendanceData(updatedData, ME) {
   }
 }
 
-
-
-// Update setupChokidar to call processAttendanceData when data.json changes
-// function setupChokidar(req) {
-//   const ME = req.session?.user?.username || 'external';
-//   console.log("working? setupChokidar");
-
-//   chokidar.watch(dataPath).on('change', async () => {
-//     const updatedData = readData();
-//     console.log(`[Attendify] data.json changed! ${JSON.stringify(updatedData)}`);
-//     console.log("data:", updatedData);
-//     console.log("user:", ME);
-    
-//     try {
-//       await processAttendanceData(updatedData, ME);
-//     } catch (err) {
-//       console.error('[Attendify] Error processing attendance data:', err);
-//     }
-    
-//     io.emit('fileChanged', { data: updatedData, user: ME });
-//   });
-// }
-
 function isValidTimestamp(timestamp) {
   return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timestamp.trim()); // Trim spaces
 }
@@ -364,45 +341,6 @@ function isValidDataStructure(data) {
   return true;
 }
 
-// function setupChokidar(req) {
-//   const ME = req.session?.user?.username || 'external';
-//   console.log("working? setupChokidar");
-
-//   if (!fs.existsSync(dataPath)) {
-//     console.error(`[Attendify] Error: data.json not found at ${dataPath}`);
-//     return;
-//   }
-
-//   try {
-//     const initialData = readData();
-//     if (!isValidDataStructure(initialData)) {
-//       throw new Error("Invalid data.json format");
-//     }
-//   } catch (error) {
-//     console.error(`[Attendify] Error reading/parsing data.json:`, error);
-//     return;
-//   }
-
-//   chokidar.watch(dataPath).on('change', async () => {
-//   const updatedData = readData();
-
-//   if (!updatedData || Object.keys(updatedData).length === 0) {
-//     console.error(`[Attendify] Skipping processing: data.json is empty.`);
-//     return;
-//   }
-
-//   if (!isValidDataStructure(updatedData)) {
-//     console.error(`[Attendify] Invalid format detected in updated data.json`);
-//     return;
-//   }
-
-//   });
-// }
-
-
-
-
-// prefilling, with cron
 function setupChokidar(req) {
   const ME = req.session?.user?.username || 'external';
   console.log("working? setupChokidar");
@@ -442,7 +380,6 @@ function setupChokidar(req) {
     io.emit('fileChanged', { data: updatedData, user: ME }); // 🔥 Ensure UI updates!
   });
 }
-
 
 async function prefillAttendance() {
   try {

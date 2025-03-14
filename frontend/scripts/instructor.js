@@ -362,7 +362,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                     <td>${student.time_out ? convertTo12Hour(student.time_out) : 'Not Present'}</td>
                                     <td>${student.grade_section}</td>
                                     <td>${student.student_id}</td>
-                                    <td>${student.remark || 'No remarks'}</td>
+                                    <td>${student.remark || ' '}</td>
                                 </tr>
                             `;
                         }).join('');
