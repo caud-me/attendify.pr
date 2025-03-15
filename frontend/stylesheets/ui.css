@@ -5,6 +5,7 @@
 
 :root {
     --ui-white: #ededed;
+    --ui-white-op: #ededed80;
     --ui-black: #353535;
     --ui-gray: #808080;
     --ui-grayAlt: #777777;
@@ -12,7 +13,7 @@
     --ui-grayTranslucent2: #80808020;
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
-    --ui-blue: #4444ff;
+    --ui-blue: #7800e9;
     --ui-blueO1: #4444ff10;
     --ui-blueO2: #4444ff40;
     --ui-critical: #ff0026;
@@ -33,6 +34,7 @@
 
 [data-theme="dark"] {
     --ui-white: #202020;
+    --ui-white-op: #20202080;
     --ui-black: #cdcdcd;
     --ui-gray: #808080;
     --ui-grayAlt: #999999;
@@ -40,9 +42,9 @@
     --ui-grayTranslucent2: #80808020;
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
-    --ui-blue: #6666ff;
-    --ui-blueO1: #6666ff20;
-    --ui-blueO2: #6666ff50;
+    --ui-blue: #bf66ff;
+    --ui-blueO1: #a666ff20;
+    --ui-blueO2: #a666ff50;
     --ui-critical: #ff2248;
     --ui-criticalO1: #ff224820;
     --ui-criticalO2: #ff224850;
@@ -56,7 +58,7 @@
 }
 
 ::selection {
-    background-color: #FFFF40;
+    background-color: #e240ff;
     color: #353535;
 }
 
@@ -100,14 +102,10 @@ h2:hover {
 
 h3 {
     font-size: 1.5rem;
-    font-family: 'Segoe UI Variable Display';
+    font-family: 'Segoe UI Variable Text';
     font-weight: bold;
     letter-spacing: -0.03em;
     transition: var(--transition-smooth);
-}
-
-h3:hover {
-    color: var(--ui-blue);
 }
 
 h4 {
@@ -190,11 +188,11 @@ button {
     background: var(--ui-black);
     outline: none;
     border: none;
-    font-weight: 500;
     letter-spacing: -0.02em;
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
+    font-size: .875rem;
 }
 
 button:hover {
@@ -282,12 +280,12 @@ input, select {
     font-family: 'Segoe UI Variable Small';
     text-decoration: none;
     color: var(--ui-black);
-    padding: .5rem .75rem;
-    border-radius: var(--radius-md);
+    padding: .25rem .5rem;
+    border-radius: var(--radius-sm);
     border: none;
     border-bottom: solid 1px var(--ui-grayTranslucent4);
     background-color: var(--ui-grayTranslucent1);
-    line-height: 1.5;
+    line-height: 1;
     font-size: .875rem;
     transition: var(--transition-smooth);
 }
@@ -600,7 +598,7 @@ main {
 }
 
 .modal-content {
-    background: var(--ui-white); 
+    background: var(--ui-white-op); 
     border-radius: var(--radius-lg);
     width: 320px; 
     text-align: center;
@@ -608,15 +606,16 @@ main {
     opacity: 0;
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    padding: .5rem;
 }
 
 /* When modal is not hidden */
 .modal:not(.hidden) {
     opacity: 1;
     visibility: visible;
-    -webkit-backdrop-filter: blur(.5rem) saturate(2);
-    -moz-backdrop-filter: blur(.5rem) saturate(2);
-    backdrop-filter: blur(.5rem) saturate(2);
+    -webkit-backdrop-filter: blur(1rem) saturate(2);
+    -moz-backdrop-filter: blur(1rem) saturate(2);
+    backdrop-filter: blur(1rem) saturate(2);
 }
 
 .modal:not(.hidden) .modal-content {
@@ -630,6 +629,7 @@ main {
     flex-direction: column;
     overflow: hidden;
     border-top: 1px solid var(--ui-grayTranslucent1);
+    border-radius: .25rem;
 }
 
 .modal-buttons > button {

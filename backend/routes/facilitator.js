@@ -28,7 +28,8 @@ router.get('/remarks', $requireRole(['facilitator']), async (req, res) => {
                 c.course_name, 
                 c.course_code, 
                 a.recorded_by AS flagged_by, 
-                a.remark AS remarks
+                a.remark AS remarks,
+                DATE_FORMAT(a.updated_at, '%a %b %e, %h:%i %p') AS flagged_at
             FROM attendance a
             JOIN students s ON a.student_id = s.student_id
             JOIN classes cl ON a.class_id = cl.class_id

@@ -26,16 +26,17 @@ async function loadFlaggedReports() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${entry.student_id}</td>
             <td>
                 <p>${entry.full_name}</p>
                 <div class="stub">${entry.grade_section}</div>
+                <p>${entry.student_id}</p>
             </td>
+            <td class="remark">${entry.remarks}</td>
             <td>
                 <p>${entry.flagged_by}</p>
                 <div class="stub">${entry.course_name}</div>
+                <p>${entry.flagged_at}</p>
             </td>
-            <td class="remark">${entry.remarks}</td>
         `;
 
         if (entry.remarks) {
