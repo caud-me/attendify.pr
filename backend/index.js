@@ -30,9 +30,9 @@ const io = socketIo(httpServer);
 
 // Setup Socket.io
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('[Socket.io] A user connected');
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('[Socket.io] User disconnected');
   });
 });
 

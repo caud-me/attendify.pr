@@ -30,12 +30,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
     // Listen for real-time updates
-    // socket.on('fileChanged', (data) => {
-    //     console.log('Updated data received:', data);
-    
-    //     // Update the UI dynamically
-    //     document.getElementById('liveDataContainer').innerText = JSON.stringify(data, null, 2);
-    // });
     socket.on("fileChanged", (payload) => {
         const updatedData = payload.data;
     
@@ -62,141 +56,6 @@ document.addEventListener("DOMContentLoaded", function() {
         instructors_ongoing();
     });
 
-    // socket.on("fileChanged", (payload) => {
-    //     const updatedData = payload.data;
-    
-    //     Object.entries(updatedData).forEach(([rfidNumber, studentData]) => {
-    //         if (studentData && studentData.timeIn && studentData.status) {
-    //             const timeIn = studentData.timeIn.split(" ")[1]; // Extract just the time part
-    //             const status = studentData.status === "In" ? "PRESENT" : "LATE";
-    
-    //             const displayUpdate = document.getElementById(`displayUpdate`);
-                
-    //             if (!displayUpdate) {
-    //                 // If element doesn't exist, create a new one
-    //                 const newDisplay = document.createElement("div");
-    //                 newDisplay.id = `displayUpdate-${rfidNumber}`;
-    //                 newDisplay.textContent = `[Attendify] ${rfidNumber} Scanned (${status} at ${timeIn})`;
-    //                 document.body.appendChild(newDisplay); // Append it somewhere relevant
-    //             } else {
-    //                 // Update existing element
-    //                 displayUpdate.textContent = `[Attendify] ${rfidNumber} Scanned (${status} at ${timeIn})`;
-    //             }
-    
-    //             // Optional: Clear message after 5 seconds
-    //             setTimeout(() => {
-    //                 const elem = document.getElementById(`displayUpdate-${rfidNumber}`);
-    //                 if (elem) elem.textContent = "";
-    //             }, 5000);
-    //         }
-    //     });
-    
-    //     instructors_ongoing();
-    // });
-    
-    
-    
-    // Initialize month and year dropdowns
-    const monthDropdown = document.getElementById("month");
-    const yearDropdown = document.getElementById("year");
-    if (monthDropdown) {
-        const currentDate = new Date();
-        monthDropdown.value = currentDate.getMonth() + 1;
-    } else {
-        console.error("monthDropdown not found in the DOM");
-    }
-    if (yearDropdown) {
-        const currentYear = new Date().getFullYear();
-        for (let y = currentYear - 5; y <= currentYear + 1; y++) {
-            const option = document.createElement("option");
-            option.value = y;
-            option.textContent = y;
-            yearDropdown.appendChild(option);
-        }
-        yearDropdown.value = currentYear;
-    } else {
-        console.error("yearDropdown not found in the DOM");
-    }
-
-    // Dynamically build day columns for attendance table header
-    const attendanceHeader = document.getElementById("attendanceHeader");
-    if (attendanceHeader) {
-        for (let i = 1; i <= 31; i++) {
-            const th = document.createElement("th");
-            th.textContent = i;
-            attendanceHeader.appendChild(th);
-        }
-    } else {
-        console.error("attendanceHeader not found in the DOM");
-    }
-
-    // Load attendance data when dropdowns change
-    const tableBody = document.getElementById("attendanceTableBody");
-    async function loadAttendance() {
-        if (!monthDropdown || !yearDropdown) {
-            console.error("Month or year dropdown not initialized.");
-            return;
-        }
-        const month = monthDropdown.value;
-        const year = yearDropdown.value;
-        try {
-            const response = await fetch(`/instructor/monthlyAttendance?month=${month}&year=${year}`);
-            if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
-            const data = await response.json();
-            if (!Array.isArray(data)) throw new Error("Expected data array");
-            
-            // Process data to generate attendance rows
-            if (tableBody) {
-                tableBody.innerHTML = "";
-                let index = 1;
-                const students = {};
-                data.forEach(record => {
-                    if (!students[record.student_id]) {
-                        students[record.student_id] = {
-                            name: record.full_name,
-                            attendance: {}
-                        };
-                    }
-                    try {
-                        const attendanceDate = new Date(record.attendance_date);
-                        const day = attendanceDate.getDate();
-                        students[record.student_id].attendance[day] = record.status;
-                    } catch (dateError) {
-                        console.error("Error parsing attendance_date:", record.attendance_date, dateError);
-                    }
-                });
-                Object.values(students).forEach(student => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `<td>${index++}</td>
-                    <td>
-                        <b>${formatName(student.name)}</b>        
-                    </td>`;
-                    for (let day = 1; day <= 31; day++) {
-                        const status = student.attendance[day] || "";
-                        let className = "";
-                        if (status === "present") className = "present";
-                        else if (status === "absent") className = "absent";
-                        else if (status === "late") className = "late";
-                        row.innerHTML += `<td class="${className}"></td>`;
-                    }
-                    tableBody.appendChild(row);
-                });
-            } else {
-                console.error("tableBody not found in the DOM");
-            }
-        } catch (error) {
-            console.error("Error fetching attendance:", error);
-        }
-    }
-
-    if (monthDropdown && yearDropdown) {
-        monthDropdown.addEventListener("change", loadAttendance);
-        yearDropdown.addEventListener("change", loadAttendance);
-        loadAttendance();
-    } else {
-        console.error("Month or year dropdown not initialized.");
-    }
-
     const remarkModal = document.getElementById("remarkModal");
     const remarkInput = document.getElementById("remarkInput");
     const submitRemarkBtn = document.getElementById("remarkConfirm");
@@ -204,8 +63,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let selectedStudentId = null;
 
-    // Use event delegation to capture clicks on dynamically added elements
-    // Ensure tbody is not null before adding the event listener
     if (tbody) {
         tbody.addEventListener("click", function(event) {
             if (event.target.classList.contains("remark-btn")) {
@@ -312,6 +169,97 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // Initialize month and year dropdowns
+const monthDropdown = document.getElementById("month");
+const yearDropdown = document.getElementById("year");
+
+if (monthDropdown) {
+    const currentDate = new Date();
+    monthDropdown.value = currentDate.getMonth() + 1;
+} else {
+    console.error("monthDropdown not found in the DOM");
+}
+if (yearDropdown) {
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear - 5; y <= currentYear + 1; y++) {
+        const option = document.createElement("option");
+        option.value = y;
+        option.textContent = y;
+        yearDropdown.appendChild(option);
+    }
+    yearDropdown.value = currentYear;
+} else {
+    console.error("yearDropdown not found in the DOM");
+}
+// Dynamically build day columns for attendance table header
+const attendanceHeader = document.getElementById("attendanceHeader");
+if (attendanceHeader) {
+    for (let i = 1; i <= 31; i++) {
+        const th = document.createElement("th");
+        th.textContent = i;
+        attendanceHeader.appendChild(th);
+    }
+} else {
+    console.error("attendanceHeader not found in the DOM");
+}
+
+async function loadAttendance() {
+    const month = monthDropdown.options[monthDropdown.selectedIndex].text.toLowerCase(); 
+    const year = yearDropdown.value;
+
+    try {
+        const response = await fetch(`/instructor/monthlyAttendance?month=${month}&year=${year}`);
+        if (!response.ok) throw new Error(`HTTP Error! Status: ${response.status}`);
+
+        const data = await response.json();
+        console.log("Fetched Data:", data); // For debugging
+        renderAttendanceTable(data);
+    } catch (error) {
+        console.error("Error fetching attendance:", error);
+    }
+}
+
+function renderAttendanceTable(data) {
+    const tableBody = document.getElementById("attendanceTableBody");
+
+    tableBody.innerHTML = "";
+
+    data.forEach((student, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${formatName(student.full_name)}</td>
+            ${generateAttendanceCells(student.attendance_history)}
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function generateAttendanceCells(history) {
+    return Array.from({ length: 31 }, (_, day) => {
+        const record = history.find(att => {
+            const date = new Date(att.date);
+            return date.getDate() === day + 1;
+        });
+
+        const status = record ? record.status : "absent";
+        const statusSymbol = status === "present" ? "P" : status === "late" ? "L" : "-";
+        return `<td class="${status}">${statusSymbol}</td>`;
+    }).join("");
+}
+
+loadAttendance(); // Call immediately when page loads
+
+
+
+if (monthDropdown && yearDropdown) {
+    monthDropdown.addEventListener("change", loadAttendance);
+    yearDropdown.addEventListener("change", loadAttendance);
+    loadAttendance(); // Load initial data
+} else {
+    console.error("Month or year dropdown not initialized.");
+}
+
     async function instructors_ongoing() {
         try {
             const response = await fetch('/instructor/ongoing');
@@ -320,6 +268,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             const data = await response.json();
             console.log("instructors_ongoing data", data);
+            console.log("Attendance Data:", data);
+
 
             const isFreeTimeElement = document.getElementById('isFreeTime');
             const isFreeTimeCElement = document.getElementById('isFreeTimeC');
@@ -396,5 +346,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     instructors_me();
-    instructors_ongoing();
+    instructors_ongoing(); 
+    
 });

@@ -20,7 +20,7 @@
     --ui-criticalO1: #ff002610;
     --ui-criticalO2: #ff002640;
     --ui-presentTag: #4ce04c;
-    --ui-absentTag: #808080;
+    --ui-absentTag: #00000000;
     --ui-lateTag: #e1b918;
     
     /* New variables for enhanced elements */
@@ -49,7 +49,7 @@
     --ui-criticalO1: #ff224820;
     --ui-criticalO2: #ff224850;
     --ui-presentTag: #63ff63;
-    --ui-absentTag: #808080;
+    --ui-absentTag: #00000000;
     --ui-lateTag: #ffe62c;
     
     /* Dark theme shadows */
@@ -58,7 +58,7 @@
 }
 
 ::selection {
-    background-color: #e240ff;
+    background-color: rgb(197, 161, 255);
     color: #353535;
 }
 
@@ -126,7 +126,6 @@ small {
 
 main {
     margin: 0 auto;
-    padding: 1rem;
     max-width: 768px;
 }
 
@@ -159,6 +158,13 @@ header {
 section {
     margin: 4rem 0;
     transition: var(--transition-smooth);
+}
+
+.intro-section {
+    background-image: url('../resources/logo\ and\ design.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 100%;
 }
 
 .wrapped, .tab-content {
@@ -298,7 +304,6 @@ input:focus, select:focus {
 .splitter {
     display: flex;
     align-items: center;
-    padding: 1rem;
     height: 100vh;
     max-width: inherit;
     gap: 1rem;
@@ -307,6 +312,7 @@ input:focus, select:focus {
 .splitter > * {
     flex-basis: 50%;
     margin: 0;
+    padding: 1rem;
 }
 
 form.signIn {
@@ -552,6 +558,10 @@ main {
 }
 
 @media screen and (max-width:768px) {
+    .intro-section {
+        height: 50vh;
+    }
+
     .splitter {
         display: block;
     }
@@ -685,8 +695,8 @@ td .respect3 .late {
     position: sticky;
     left: 0;
     z-index: 3;
-    backdrop-filter: blur(10px);
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    background-color: var(--ui-white);
+    border: none;
 }
 
 .switch {

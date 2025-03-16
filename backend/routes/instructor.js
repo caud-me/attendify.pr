@@ -314,6 +314,7 @@ router.post('/add-remark', $requireRole(['teacher']), async (req, res) => {
 router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
   const { month, year } = req.query; // Get query params
+  console.log(month, year)
 
   if (!month || !year) {
       return res.status(400).json({ message: "Month and year are required." });
@@ -323,6 +324,17 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
   const now = moment().tz(timezone);
   const dayName = now.format('ddd');
   const timeString = now.format('HH:mm:ss');
+
+//   const timezone = 'Asia/Manila';
+//   const now = moment.tz('2025-03-15T08:00:00', timezone);
+//   const dayName = now.format('ddd');
+//   const timeString = now.format('HH:mm:ss');
+// //   const month = now.format('MMMM');
+// //   const year = now.format('YYYY');
+//   console.log("🕒 Current time:", timeString, dayName);
+// //   console.log("📅 Selected month:", month, year);
+//   console.log("👨‍🏫 Instructor:", username);
+//   console.log("Current Date:", now.format('YYYY-MM-DD'));
 
   try {
       // Find the currently ongoing class for the instructor
@@ -333,35 +345,60 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
            AND ? BETWEEN start_time AND end_time`,
           [username, dayName, timeString]
       );
+      console.log("🔍 Ongoing class:", ongoing_class);
 
       if (ongoing_class.length === 0) {
           return res.status(404).json({ message: "No ongoing class found." });
       }
 
-      const class_id = ongoing_class[0].class_id;
+      const course_code = ongoing_class[0]?.course_code || null;
+      console.log("📌 Using course_code:", course_code);
 
-      // Fetch attendance history for the specified month and year
+      const monthNumber = moment(month, 'MMMM').format('MM'); // Convert month name to number
+
       const [attendanceRecords] = await $pool.execute(
-          `SELECT 
-              s.student_id, 
-              s.full_name, 
-              a.attendance_date, 
-              COALESCE(a.status, 'absent') AS status, 
-              a.time_in, 
-              a.remark 
-           FROM students s
-           JOIN student_classes sc ON s.student_id = sc.student_id
-           LEFT JOIN attendance a 
-              ON s.student_id = a.student_id 
-              AND a.class_id = ? 
-              AND MONTH(a.attendance_date) = ? 
-              AND YEAR(a.attendance_date) = ?
-           WHERE sc.class_id = ?
-           ORDER BY a.attendance_date, s.full_name`,
-          [class_id, moment().month(month).format('M'), year, class_id]
+        `SELECT s.full_name, a.* 
+         FROM attendance_history a
+         JOIN students s ON a.student_id = s.student_id
+         WHERE a.class_id LIKE ? 
+         AND a.attendance_date LIKE ?`,
+        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`]
       );
+    
 
-      res.json(attendanceRecords);
+      const groupedAttendance = attendanceRecords.reduce((acc, row) => {
+        const { full_name, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark } = row;
+    
+        if (!acc[student_id]) {
+            acc[student_id] = {
+                full_name,
+                student_id,
+                attendance_history: []
+            };
+        }
+    
+        acc[student_id].attendance_history.push({
+            date: attendance_date,
+            status,
+            time_in,
+            time_out,
+            recorded_by,
+            remark
+        });
+    
+        return acc;
+    }, {});
+
+    const finalOutput = Object.values(groupedAttendance);
+
+    
+
+    
+    
+
+      console.log("📊 Monthly attendance:", finalOutput);
+
+      res.json(finalOutput);
 
   } catch (error) {
       console.error("Error fetching monthly attendance:", error);
@@ -369,67 +406,147 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
   }
 });
 
+const tmp = require('tmp');
+
+const ExcelJS = require('exceljs');
+
 router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req, res) => {
-  const username = req.session.user.username;
-  const { month, year } = req.query;
+    const username = req.session.user.username;
+    var { month, year } = req.query;
 
-  if (!month || !year) {
-      return res.status(400).json({ message: "Month and year are required." });
-  }
+  
+    const timezone = 'Asia/Manila';
+    const now = moment().tz(timezone);
+    const dayName = now.format('ddd');
+    const timeString = now.format('HH:mm:ss');
 
-  const timezone = 'Asia/Manila';
-  const now = moment().tz(timezone);
-  const dayName = now.format('ddd');
-  const timeString = now.format('HH:mm:ss');
+    if (!month || !year) {
+        month = now.format('MMMM');
+        year = now.format('YYYY');
+    }
 
-  try {
+  
+    try {
       const [ongoing_class] = await $pool.execute(
-          `SELECT class_id, course_code, grade_section FROM classes 
-           WHERE teacher_username = ? 
-           AND day = ? 
-           AND ? BETWEEN start_time AND end_time`,
-          [username, dayName, timeString]
+        `SELECT class_id, course_code, grade_section FROM classes 
+         WHERE teacher_username = ? 
+         AND day = ? 
+         AND ? BETWEEN start_time AND end_time`,
+        [username, dayName, timeString]
       );
-
+  
       if (ongoing_class.length === 0) {
-          return res.status(404).json({ message: "No ongoing class found." });
+        return res.status(404).json({ message: "No ongoing class found." });
       }
-
+  
       const class_id = ongoing_class[0].class_id;
-
+      const monthNumber = moment(month, 'MMMM').format('MM');
+  
       const [attendanceRecords] = await $pool.execute(
-          `SELECT 
-              s.student_id, 
-              s.full_name, 
-              a.attendance_date, 
-              COALESCE(a.status, 'absent') AS status, 
-              a.time_in, 
-              a.remark 
-           FROM students s
-           JOIN student_classes sc ON s.student_id = sc.student_id
-           LEFT JOIN attendance a 
-              ON s.student_id = a.student_id 
-              AND a.class_id = ? 
-              AND MONTH(a.attendance_date) = ? 
-              AND YEAR(a.attendance_date) = ?
-           WHERE sc.class_id = ?
-           ORDER BY a.attendance_date, s.full_name`,
-          [class_id, moment().month(month).format('M'), year, class_id]
+        `SELECT 
+            s.full_name,
+            s.student_id,
+            COUNT(CASE WHEN a.status = 'present' THEN 1 END) AS total_present,
+            COUNT(CASE WHEN a.status = 'late' THEN 1 END) AS total_late,
+            COUNT(CASE WHEN a.status = 'absent' THEN 1 END) AS total_absent,
+            GROUP_CONCAT(CONCAT(DAY(a.attendance_date), ':', a.status) ORDER BY a.attendance_date) AS daily_status
+          FROM 
+            attendance_history a
+          JOIN 
+            students s ON a.student_id = s.student_id
+          WHERE 
+            a.class_id LIKE ? 
+            AND a.attendance_date LIKE ?
+          GROUP BY 
+            s.student_id
+          ORDER BY 
+            s.full_name ASC`,
+        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`]
       );
-
-      const worksheet = xlsx.utils.json_to_sheet(attendanceRecords);
-      const workbook = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(workbook, worksheet, "Monthly Attendance");
-
-      const filePath = path.join(__dirname, `[Attendify] Monthly Attendance of ${username}.xlsx`);
-      xlsx.writeFile(workbook, filePath);
-
-      res.download(filePath);
-
-  } catch (error) {
+  
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Monthly Attendance");
+  
+      const defaultFont = { name: 'Segoe UI', size: 12 };
+      worksheet.properties.defaultRowHeight = 20;
+  
+      const titleRow = worksheet.addRow([`${month} ${year} Attendance`]);
+      titleRow.font = { ...defaultFont, size: 24, bold: false, family: 2 };
+      worksheet.mergeCells(`A1:AI1`);
+      titleRow.alignment = { vertical: 'middle' };
+      titleRow.height = 30;
+  
+      const headerRow = worksheet.addRow([
+        '#', 'Name', 'Student ID', 
+        'P', 'L', 'A',  // Added Total Counters
+        ...Array.from({ length: 31 }, (_, i) => i + 1)
+      ]);
+  
+      headerRow.font = { ...defaultFont, color: { argb: '808080' } };
+      headerRow.alignment = { horizontal: 'center' };
+  
+      attendanceRecords.forEach((student, index) => {
+        const dailyAttendance = Array(31).fill('');
+  
+        if (student.daily_status) {
+          student.daily_status.split(',').forEach(record => {
+            const [day, status] = record.split(':');
+            dailyAttendance[day - 1] = status; // Map status to correct day
+          });
+        }
+  
+        const row = worksheet.addRow([
+          index + 1,
+          student.full_name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+          student.student_id,
+          student.total_present || 0, 
+          student.total_late || 0, 
+          student.total_absent || 0, 
+          ...dailyAttendance
+        ]);
+  
+        row.font = defaultFont;
+        row.alignment = { vertical: 'middle' };
+  
+        row.eachCell((cell, colNum) => {
+          if (colNum > 6) { // Only cells for daily status
+            if (cell.value === 'present') cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'C6EFCE' } }; // Green
+            if (cell.value === 'late') cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEB9C' } }; // Yellow
+            if (cell.value === 'absent') cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7CE' } }; // Red
+          }
+        });
+      });
+  
+      // Column Widths
+      worksheet.getColumn(1).width = 5;   // #
+      worksheet.getColumn(2).width = 40;  // Name
+      worksheet.getColumn(3).width = 20;  // Student ID
+      worksheet.getColumn(4).width = 5;   // P
+      worksheet.getColumn(5).width = 5;   // L
+      worksheet.getColumn(6).width = 5;   // A
+      for (let i = 7; i <= 37; i++) worksheet.getColumn(i).width = 5; // Days 1-31
+  
+      const legendRow = worksheet.addRow([]);
+      legendRow.height = 10;
+  
+      const legend = worksheet.addRow(["Legend: ", "", "■ Present", "", "■ Late", "", "■ Absent"]);
+      legend.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'C6EFCE' } };
+      legend.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEB9C' } };
+      legend.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7CE' } };
+  
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="[Attendify] ${month} ${year} Attendance.xlsx"`);
+  
+      await workbook.xlsx.write(res);
+      res.end();
+  
+    } catch (error) {
       console.error("Error fetching monthly attendance:", error);
       res.status(500).json({ message: "Internal Server Error" });
-  }
-})
+    }
+  });
+  
+  
+  
 
 module.exports = router;

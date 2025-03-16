@@ -60,8 +60,9 @@
                 <h3>Live Student Monitoring</h3>
                 <p id="liveDataContainer"></p>
                 <p>As soon as the student scans during your class, the data will be recorded here in realtime. You can get a copy of todays attendance <a href="instructor/downloadStudentAttendanceToday">here</a></p>
+                <p>Try the new PDF exporting version <a href="/instructor/export-pdf" target="_blank">here</a></p>
                 <div class="colorfulll liner"></div>
-                <div class="displayTable">
+                <div class="displayTable" id="table_todayAttendance">
                     <table>
                         <thead>
                             <tr>
@@ -104,8 +105,10 @@
         </section>
 
         <section>
+            <small class="stub colorfulll">NEW</small>
             <h3>Monthly Attendance</h3>
             <p>Keep track of your students' attendance records for each month. Select the desired month and year to view the attendance overview.</p>
+            <p>Export attendance records for this month <a href="/instructor/monthlyAttendance/download">here</a>.</p>
             <div class="controls">
                 <select id="month" name="month" title="month">
                     <option value="1">January</option>
@@ -124,8 +127,7 @@
 
                 <select id="year" name="year" title="year"></select>
             </div>
-            <p>Not enough data to show</p>
-            <div class="displayTable hidden">
+            <div class="displayTable">
                 <table class="attendance-table">
                     <thead>
                         <tr id="attendanceHeader">
