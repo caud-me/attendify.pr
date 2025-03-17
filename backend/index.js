@@ -72,7 +72,7 @@ app.post('/signin', async (req, res) => {
   try {
     const { username, password } = req.body;
     const [rows] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
-
+  
     if (rows[0] && rows[0].password === password) {
       req.session.user = rows[0];
       await new Promise((resolve, reject) => {
@@ -92,6 +92,8 @@ app.post('/signin', async (req, res) => {
       console.log('[Attendify] logged in as', req.session.user.username);
       res.redirect(redirectPaths[req.session.user.role]);
       setupChokidar(req);
+      console.log(JSON.stringify(req.session.user))
+
     } else {
       res.status(401).send(`Invalid credentials <a href='/home'>Go back.</a>`);
     }

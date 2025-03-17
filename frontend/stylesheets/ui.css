@@ -58,7 +58,7 @@
 }
 
 ::selection {
-    background-color: #e240ff;
+    background-color: #a666ff;
     color: #353535;
 }
 
@@ -159,6 +159,13 @@ header {
 section {
     margin: 4rem 0;
     transition: var(--transition-smooth);
+}
+
+.intro-section {
+    background-image: url(../resources/hx.jpg);
+    height: 100%;
+    background-size: cover;
+    background-position: center;
 }
 
 .wrapped, .tab-content {
@@ -298,15 +305,19 @@ input:focus, select:focus {
 .splitter {
     display: flex;
     align-items: center;
-    padding: 1rem;
     height: 100vh;
     max-width: inherit;
     gap: 1rem;
 }
 
+main.splitter.notLimitedTo768p {
+    padding: 0;
+}
+
 .splitter > * {
     flex-basis: 50%;
     margin: 0;
+    padding: 1rem;
 }
 
 form.signIn {
@@ -396,6 +407,12 @@ td, th {
 
 tr:hover td {
     background-color: var(--ui-grayTranslucent1);
+    color: var(--ui-blue);
+    padding: 1.5em 1em;
+}
+
+tr:hover > td > .stub {
+    background-color: var(--ui-blue);
 }
 
 td, th, small {
@@ -552,6 +569,10 @@ main {
 }
 
 @media screen and (max-width:768px) {
+    .intro-section {
+        height: 33vh;
+    }
+
     .splitter {
         display: block;
     }
