@@ -30,3 +30,12 @@ button {
 .justified > * {
     text-align: justify;
 }
+
+h1:hover {
+    background: linear-gradient(135deg, #a117eb, #cab0ff, #6f00ff, #2500ac, #2b2b2b);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: smoothGradient 8s ease infinite;
+}
