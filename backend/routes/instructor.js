@@ -361,8 +361,9 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
          FROM attendance_history a
          JOIN students s ON a.student_id = s.student_id
          WHERE a.class_id LIKE ? 
-         AND a.attendance_date LIKE ?`,
-        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`]
+         AND a.attendance_date LIKE ?
+         AND s.grade_section = ?`,
+        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`, `${ongoing_class[0]?.grade_section}`]
       );
     
 
@@ -457,11 +458,12 @@ router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req,
           WHERE 
             a.class_id LIKE ? 
             AND a.attendance_date LIKE ?
+            AND s.grade_section = ?
           GROUP BY 
             s.student_id
           ORDER BY 
             s.full_name ASC`,
-        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`]
+          [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`, `${ongoing_class[0]?.grade_section}`]
       );
   
       const workbook = new ExcelJS.Workbook();

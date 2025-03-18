@@ -14,8 +14,8 @@
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
     --ui-blue: #7800e9;
-    --ui-blueO1: #4444ff10;
-    --ui-blueO2: #4444ff40;
+    --ui-blueO1: #7800e910;
+    --ui-blueO2: #7800e940;
     --ui-critical: #ff0026;
     --ui-criticalO1: #ff002610;
     --ui-criticalO2: #ff002640;
@@ -43,8 +43,8 @@
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
     --ui-blue: #bf66ff;
-    --ui-blueO1: #a666ff20;
-    --ui-blueO2: #a666ff50;
+    --ui-blueO1: #bf66ff20;
+    --ui-blueO2: #bf66ff50;
     --ui-critical: #ff2248;
     --ui-criticalO1: #ff224820;
     --ui-criticalO2: #ff224850;
@@ -161,10 +161,28 @@ section {
 }
 
 .intro-section {
-    background-image: url('../resources/logo\ and\ design.jpg');
+    /* background-image: url('../resources/logo\ and\ design.jpg');
     background-size: cover;
-    background-position: center;
+    background-position: center; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    padding: 0 !important;
+}
+
+.intro-section video {
+    object-fit: cover;
+    width: 100%;
     height: 100%;
+    z-index: -1;
+}
+
+video {
+    height: 100%;
+    width: 100%;
 }
 
 .wrapped, .tab-content {
@@ -402,6 +420,12 @@ td, th {
 
 tr:hover td {
     background-color: var(--ui-grayTranslucent1);
+    padding: 1em 1em;
+    color: var(--ui-blue);
+}
+
+tr:hover td .stub {
+    background-color: var(--ui-blue);
 }
 
 td, th, small {
