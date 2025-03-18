@@ -321,6 +321,8 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
   }
 
   const timezone = 'Asia/Manila';
+    //hardcode value for testing
+  // const now = moment('2025-03-14T12:10:00').tz('Asia/Manila');
   const now = moment().tz(timezone);
   const dayName = now.format('ddd');
   const timeString = now.format('HH:mm:ss');
@@ -362,7 +364,8 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
          JOIN students s ON a.student_id = s.student_id
          WHERE a.class_id LIKE ? 
          AND a.attendance_date LIKE ?
-         AND s.grade_section = ?`,
+         AND s.grade_section = ?
+         ORDER BY s.full_name ASC`,
         [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`, `${ongoing_class[0]?.grade_section}`]
       );
     
