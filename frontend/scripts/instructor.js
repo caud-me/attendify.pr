@@ -243,8 +243,8 @@ function generateAttendanceCells(history) {
         });
 
         const status = record ? record.status : "absent";
-        const statusSymbol = status === "present" ? "P" : status === "late" ? "L" : "-";
-        return `<td class="${status}">${statusSymbol}</td>`;
+        const statusSymbol = status === "present" ? "P" : status === "late" ? "L" : "A";
+        return `<td><p class="${status}">${statusSymbol}</p></td>`;
     }).join("");
 }
 
@@ -308,8 +308,8 @@ if (monthDropdown && yearDropdown) {
                                             <a href="#" class="remark-btn" data-studentid="${student.student_id}" data-studentname="${student.full_name}">Flag</a>
                                         </div>
                                     </td>
-                                    <td>${student.time_in ? convertTo12Hour(student.time_in) : 'Not Present'}</td>
-                                    <td>${student.time_out ? convertTo12Hour(student.time_out) : 'Not Present'}</td>
+                                    <td>${student.time_in ? convertTo12Hour(student.time_in) : ' '}</td>
+                                    <td>${student.time_out ? convertTo12Hour(student.time_out) : ' '}</td>
                                     <td>${student.grade_section}</td>
                                     <td>${student.student_id}</td>
                                     <td>${student.remark || ' '}</td>

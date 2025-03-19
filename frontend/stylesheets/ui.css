@@ -9,7 +9,7 @@
     --ui-black: #353535;
     --ui-gray: #808080;
     --ui-grayAlt: #777777;
-    --ui-grayTranslucent1: #80808010;
+    --ui-grayTranslucent1: #e8e8e8;
     --ui-grayTranslucent2: #80808020;
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
@@ -38,7 +38,7 @@
     --ui-black: #cdcdcd;
     --ui-gray: #808080;
     --ui-grayAlt: #999999;
-    --ui-grayTranslucent1: #80808010;
+    --ui-grayTranslucent1: #252525;
     --ui-grayTranslucent2: #80808020;
     --ui-grayTranslucent3: #80808040;
     --ui-grayTranslucent4: #80808080;
@@ -49,7 +49,7 @@
     --ui-criticalO1: #ff224820;
     --ui-criticalO2: #ff224850;
     --ui-presentTag: #63ff63;
-    --ui-absentTag: #00000000;
+    --ui-absentTag: #808080;
     --ui-lateTag: #ffe62c;
     
     /* Dark theme shadows */
@@ -127,6 +127,7 @@ small {
 main {
     margin: 0 auto;
     max-width: 768px;
+    padding: 1rem;
 }
 
 header {
@@ -444,6 +445,7 @@ td p {
 
 td {
     color: var(--ui-grayAlt);
+    background-color: var(--ui-white);
 }
 
 #widget_ongoing {
@@ -637,7 +639,7 @@ main {
 }
 
 .modal-content {
-    background: var(--ui-white-op); 
+    background: var(--ui-white); 
     border-radius: var(--radius-lg);
     width: 320px; 
     text-align: center;
@@ -691,7 +693,8 @@ main {
 /* table attendance month */
 #attendanceTableBody tr .present {
     background-color: var(--ui-presentTag);
-    opacity: 50%;
+    color: transparent;
+    border-radius: var(--radius-sm);
 }
 
 td .respect3 .present {
@@ -699,8 +702,7 @@ td .respect3 .present {
 }
 
 #attendanceTableBody tr .absent {
-    background-color: var(--ui-absentTag);
-    opacity: 50%;
+    color: transparent;
 }
 
 td .respect3 .absent {
@@ -709,7 +711,8 @@ td .respect3 .absent {
 
 #attendanceTableBody tr .late {
     background-color: var(--ui-lateTag);
-    opacity: 50%;
+    color: transparent;
+    border-radius: var(--radius-sm);
 }
 
 td .respect3 .late {
@@ -724,8 +727,6 @@ td .respect3 .late {
     position: sticky;
     left: 0;
     z-index: 3;
-    background-color: var(--ui-white);
-    border: none;
 }
 
 .switch {
@@ -793,33 +794,4 @@ b {
 .left {
     display: inline-flex;
     text-align: start;
-}
-
-.popup {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1000;
-    font-family: 'Segoe UI Variable Text';
-    transition: .5s cubic-bezier(0.075, 0.82, 0.165, 1);
-    backdrop-filter: blur(10px);
-}
-
-/* Adjust position for tablets */
-@media (max-width: 768px) {
-    .popup {
-        top: 10px;
-        right: 10px;
-    }
-}
-
-/* Adjust position for mobile devices */
-@media (max-width: 480px) {
-    .popup {
-        top: 5px;
-        right: 5px;
-        left: 5px; /* Centering for small screens */
-        width: auto; /* Allows the width to adjust based on content */
-        max-width: 90%; /* Prevents it from taking the full screen */
-    }
 }

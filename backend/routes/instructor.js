@@ -362,14 +362,13 @@ router.get('/monthlyAttendance', $requireRole(['teacher']), async (req, res) => 
         `SELECT s.full_name, a.* 
          FROM attendance_history a
          JOIN students s ON a.student_id = s.student_id
-         WHERE a.class_id LIKE ? 
+         WHERE a.class_id = ? 
          AND a.attendance_date LIKE ?
-         AND s.grade_section = ?
          ORDER BY s.full_name ASC`,
-        [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`, `${ongoing_class[0]?.grade_section}`]
+        [`${ongoing_class[0]?.class_id}`, `%-${monthNumber}-%`]
       );
     
-
+      console.log(ongoing_class[0]?.grade_section, ongoing_class[0]?.class_id, ongoing_class[0]?.course_code);
       const groupedAttendance = attendanceRecords.reduce((acc, row) => {
         const { full_name, student_id, class_id, attendance_date, status, time_in, time_out, recorded_by, remark } = row;
     
@@ -459,16 +458,16 @@ router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req,
           JOIN 
             students s ON a.student_id = s.student_id
           WHERE 
-            a.class_id LIKE ? 
+            a.class_id = ? 
             AND a.attendance_date LIKE ?
-            AND s.grade_section = ?
           GROUP BY 
             s.student_id
           ORDER BY 
             s.full_name ASC`,
-          [`%${ongoing_class[0]?.course_code}%`, `%-${monthNumber}-%`, `${ongoing_class[0]?.grade_section}`]
+          [`${ongoing_class[0]?.class_id}`, `%-${monthNumber}-%`]
       );
   
+      console.log(ongoing_class[0]?.grade_section, ongoing_class[0]?.class_id, ongoing_class[0]?.course_code);
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Monthly Attendance");
   

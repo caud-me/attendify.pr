@@ -13,7 +13,6 @@
 <body>
     <main>
         <header>
-            <img src="resources/attendify - logo.svg" alt="" srcset="" height="48px" width="48px">
             <h1><span id="instructor_full_name"></span></h1>
             <div class="respect">
                 <img src="resources/verified.svg" alt="" srcset="">
@@ -108,8 +107,6 @@
             <h3>Monthly Attendance</h3>
             <p>Keep track of your students' attendance records for each month. Select the desired month and year to view the attendance overview.</p>
             <p>Export attendance records for this month <a href="/instructor/monthlyAttendance/download">here</a>.</p>
-            <h4>Legend</h4>
-            <small>Gray -- Absent<br>Green -- Present<br>Yellow -- Late</small>
             <div class="controls">
                 <select id="month" name="month" title="month">
                     <option value="1">January</option>
@@ -140,7 +137,14 @@
                     <tbody id="attendanceTableBody"></tbody>
                 </table>
             </div>
+            <small>Where Late: Yellow, Green: Present. Absent students left unmarked.</small>
         </section>
+
+        <footer>
+            <img src="resources/attendify - logo.svg" alt="" height="48px" width="48px">
+            <h3>Attendify</h3>
+            <p>Esperida D., Penas J., Rodriguez N., Ros H., Caudilla A., Guido N., Oropesa I. <a href="/demolive">Details...</a> </p>
+        </footer>
 
         <!-- <section>
             <h2>Exporting Data</h2>
@@ -169,7 +173,7 @@
         </div>
     </main>
 
-    <div id="displayUpdate" class="popup wrapped"></div>
+    <div id="displayUpdate" class="hidden"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="scripts/instructor.js"></script>
