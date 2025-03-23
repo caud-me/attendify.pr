@@ -221,8 +221,8 @@ async function processAttendanceData(updatedData, ME) {
   const timeString = now.format('HH:mm:ss');
   const dayName = now.format('ddd');
 
-  console.log("[Attendify] Raw updatedData received:", JSON.stringify(updatedData, null, 2));
-  console.log("[Attendify] Updated data.json content:", JSON.stringify(updatedData, null, 2));
+  // console.log("[Attendify] Raw updatedData received:", JSON.stringify(updatedData, null, 2));
+  // console.log("[Attendify] Updated data.json content:", JSON.stringify(updatedData, null, 2));
   console.log("[Attendify] Instructor username:", ME);
 
   // Find ongoing class and get start_time

@@ -16,12 +16,18 @@ router.get('/me', $requireRole(['admin']), async (req, res) => {
 router.get('/api', $requireRole(['admin']), async (req, res) => {
     const [users] = await $pool.execute(`SELECT * FROM users`);
     const [students] = await $pool.execute(`SELECT * FROM students ORDER BY rfid_no`);
-    const [student_classes] = await $pool.execute(`SELECT * FROM student_classes`);
+    const [student_classes] = await $pool.execute(`
+      SELECT student_classes.student_id, students.full_name, student_classes.*  
+      FROM student_classes  
+      JOIN students ON student_classes.student_id = students.student_id  
+      ORDER BY students.grade_section, students.full_name;
+      `);
     const [courses] = await $pool.execute(`SELECT * FROM courses`);
     const [classes] = await $pool.execute(`
       SELECT classes.*, courses.course_name 
       FROM classes
       JOIN courses ON classes.course_code = courses.course_code
+      ORDER BY teacher_username
   `);  
     const [attendance_history] = await $pool.execute(`SELECT * FROM attendance_history`);
     const [attendance] = await $pool.execute(`SELECT * FROM attendance`);
@@ -230,4 +236,86 @@ router.post('/prefillAttendance', $requireRole(['admin']), async (req, res) => {
     res.json({ message: 'Something went wrong' });
   }
 });
+
+router.get('/download/:table', $requireRole(['admin']), async (req, res) => {
+  const { table } = req.params;
+  const [data] = await $pool.execute(`SELECT * FROM ${table}`);
+
+  if (!data.length) return res.status(404).send('No data found.');
+
+  const ExcelJS = require('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  
+  // We'll use the table name (converted to Proper Case) as the worksheet name.
+  // (If you run into naming issues, you might need to sanitize the name.)
+  const toProperCase = (str) =>
+    str
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const properTableName = toProperCase(table);
+  const worksheet = workbook.addWorksheet(properTableName);
+
+  // Get the column keys from the first data row.
+  const keys = Object.keys(data[0]);
+
+  // Define columns (this automatically creates a header row in the current worksheet)
+  worksheet.columns = keys.map(key => ({
+    header: toProperCase(key),
+    key,
+    width: Math.max(
+      toProperCase(key).length,
+      ...data.map(row => (row[key] ? row[key].toString().length : 0))
+    ) + 5
+  }));
+
+  // At this point, ExcelJS has created the header row at row 1.
+  // Now, insert a new row at the top for the title.
+  worksheet.insertRow(1, [properTableName]);
+
+  // Merge cells in the title row (A1 to the last column)
+  const lastColLetter = String.fromCharCode(64 + keys.length); // e.g. if keys.length = 5, then letter = E
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
+
+  // Format the title row
+  const titleCell = worksheet.getCell('A1');
+  titleCell.font = { name: 'Segoe UI Semibold', size: 24 };
+  titleCell.alignment = { vertical: 'middle'};
+
+  worksheet.getRow(2).height = 24; 
+  worksheet.getRow(2).alignment = { vertical: 'middle'};
+  worksheet.getRow(2).font = { name: 'Segoe UI Semibold', size: 12 }; 
+  // gray color
+  worksheet.getRow(2).font = { color: { argb: 'FF808080' } };
+
+  // Now, the header row is pushed down to row 2, and your data should start at row 3.
+  data.forEach(row => worksheet.addRow(row));
+
+  // Debug output (should log your title in A1)
+  console.log('Title in A1:', worksheet.getCell('A1').value);
+
+  // Generate Excel file and send it in response
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${table}.xlsx`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
+});
+
+//re enroll
+router.get('/reenroll', $requireRole(['admin']), async (req, res) => {
+    // Clears student_classes for refresh
+    await $pool.execute(`DELETE FROM student_classes`);
+
+    // Re-enrolls students and captures result
+    const [result] = await $pool.execute(`
+      INSERT INTO student_classes (student_id, class_id, enrollment_type, enrollment_date)
+      SELECT s.student_id, c.class_id, 'preset', CURDATE()
+      FROM students s
+      JOIN classes c ON s.grade_section = c.grade_section;
+    `);
+
+    res.json({ message: `OK, ${result.affectedRows} rows affected` });
+})
+
 module.exports = router;

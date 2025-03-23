@@ -80,6 +80,7 @@ async function admins_api() {
       <tr>
         <td>${index + 1}</td>
         <td>${eachData.student_id}</td>
+        <td>${eachData.full_name}</td>
         <td>${eachData.class_id}</td>
         <td>${eachData.enrollment_type}</td>
         <td>${eachData.enrollment_date}</td>

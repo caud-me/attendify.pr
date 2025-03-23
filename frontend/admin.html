@@ -210,6 +210,12 @@
                         <button type="submit">+ Add Class</button>
                     </form>
                 </section>
+                <section class="wrapped">
+                    <h3>Advanced</h3>
+                    <p>Re-enroll all students</p>
+                    <small>If you want to ensure all regular students are enrolled to their respective class, you can re-enroll them.</small>
+                    <p><a href="/admin/reenroll">Re-enroll Students</a></p>
+                </section>
             </div>
             <div>
                 <section>
@@ -222,7 +228,10 @@
                         <button class="tab-button" data-tab="classes" role="tab">Classes</button>
                     </div>
                     <div class="tab-content active" data-tab="users" role="tabpanel">
-                        <h4>Users</h4>
+                        <h3>Users</h3>
+                        <p>Users are the people that are registered in the system</p>
+                        <p>Download raw data <a href="admin/download/users">here</a></p>
+                        <input type="text" id="searchUsers" placeholder="Search Users..." onkeyup="searchTable(this, 'admin_tableuser')">
                         <div class="displayTable">
                             <table>
                                 <thead>
@@ -240,7 +249,10 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="students" role="tabpanel">
-                        <h4>Students</h4>
+                        <h3>Students</h3>
+                        <p>Students are the users that are enrolled in the school</p>
+                        <p>Download raw data <a href="admin/download/students">here</a></p>
+                        <input type="text" id="searchStudents" placeholder="Search Students..." onkeyup="searchTable(this, 'admin_tablestudents')">
                         <div class="displayTable">
                             <table>
                                 <thead>
@@ -263,13 +275,18 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="student_classes" role="tabpanel">
-                        <h4>Student Classes</h4>
+                        <h3>Student Classes</h3>
+                        <p>Student Classes are the classes that the students are enrolled in</p>
+                        <p>Download raw data <a href="admin/download/student_classes">here</a></p>
+                        <input type="text" id="searchStudentClasses" placeholder="Search Student Classes..." onkeyup="searchTable(this, 'admin_tablestudent_classes')">
+
                         <div class="displayTable">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>#</th>
                                         <th>Student ID</th>
+                                        <th>Student Name</th>
                                         <th>Class ID</th>
                                         <th>Enrollment Type</th>
                                         <th>Enrollment Date</th>
@@ -282,7 +299,10 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="courses" role="tabpanel">
-                        <h4>Courses</h4>
+                        <h3>Courses</h3>
+                        <p>Courses are the subjects that the students take</p>
+                        <p>Download raw data <a href="admin/download/courses">here</a></p>
+                        <input type="text" id="searchCourses" placeholder="Search Courses..." onkeyup="searchTable(this, 'admin_tablecourses')">
                         <div class="displayTable">
                             <table>
                                 <thead>
@@ -299,7 +319,12 @@
                         </div>
                     </div>
                     <div class="tab-content" data-tab="classes" role="tabpanel">
-                        <h4>Classes</h4>
+                        <h3>Classes</h3>
+                        <p>Classes are the schedules of the teachers and the subjects they teach</p>
+                        <p>Download raw data <a href="admin/download/classes">here</a></p>
+                        <small>Note: Teachers can already export their own schedules on their account.</small>
+                        <input type="text" id="searchClasses" placeholder="Search Classes..." 
+                        onkeyup="searchTable(this, 'admin_tableclasses')">
                         <div class="displayTable">
                             <table>
                                 <thead>
@@ -324,6 +349,20 @@
             </div>
         </div>
     </main>
+    <script>
+        function searchTable(inputElement, tableID) {
+            let filter = inputElement.value.toLowerCase();
+            let table = document.getElementById(tableID);
+            if (!table) return; // If table is missing, exit
+
+            let rows = table.getElementsByTagName("tr");
+
+            for (let i = 0; i < rows.length; i++) { // Skip headers
+                let rowText = rows[i].textContent.toLowerCase();
+                rows[i].style.display = rowText.includes(filter) ? "" : "none";
+            }
+        }
+    </script>
     <script src="./scripts/global_banner.js"></script>
     <script src="./scripts/global_theme.js"></script>
     <script src="./scripts/admin.js"></script>

@@ -128,119 +128,255 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
 });
 
 router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (req, res) => {
-    const username = req.session.user.username;
-  
-    const timezone = 'Asia/Manila';
-    const now = moment().tz(timezone);
-    const dateString = now.format('YYYY-MM-DD');
-    const dayName = now.format('ddd');
-    const currentTime = now.format('HH:mm:ss');
-  
-    // First, get the current class information
-    const [currentClass] = await $pool.execute(
-      `SELECT class_id, course_code, grade_section, start_time, end_time 
-       FROM classes 
-       WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
-       LIMIT 1`,
-      [username, dayName, currentTime]
-    );
-  
-    if (!currentClass.length) {
-      return res.status(404).send('No active class found at this time.');
-    }
-    
-    const classId = currentClass[0].class_id;
-    const courseCode = currentClass[0].course_code;
-    const gradeSection = currentClass[0].grade_section;
-  
-    // Then get students and their attendance for this specific class
-    const [result] = await $pool.execute(
-      `SELECT 
-          s.student_id, 
-          s.full_name, 
-          s.grade_section, 
-          a.status, 
-          a.time_in, 
-          a.remark 
-      FROM students s
-      JOIN student_classes sc ON s.student_id = sc.student_id AND sc.class_id = ?
-      LEFT JOIN attendance a ON s.student_id = a.student_id 
-        AND a.attendance_date = ? 
-        AND a.class_id = ?
-      ORDER BY s.grade_section, s.full_name`,
-      [classId, dateString, classId]
-    );
-  
-    console.log("📊 Attendance data:", result);
-    
-    const worksheet = xlsx.utils.json_to_sheet(result);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, `${courseCode} - ${gradeSection}`);
-  
-    const filePath = path.join(__dirname, `[Attendify] ${courseCode} ${gradeSection} Attendance ${dateString}.xlsx`);
-    xlsx.writeFile(workbook, filePath);
-  
-    res.download(filePath);
+  const username = req.session.user.username;
+  const timezone = 'Asia/Manila';
+  const now = moment().tz(timezone);
+  const dateString = now.format('YYYY-MM-DD');
+  const dayName = now.format('ddd');
+  const currentTime = now.format('HH:mm:ss');
+
+  // Get current class information
+  const [currentClass] = await $pool.execute(
+    `SELECT class_id, course_code, grade_section, start_time, end_time 
+     FROM classes 
+     WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
+     LIMIT 1`,
+    [username, dayName, currentTime]
+  );
+
+  if (!currentClass.length) {
+    return res.status(404).send('No active class found at this time.');
+  }
+
+  const classId = currentClass[0].class_id;
+  const courseCode = currentClass[0].course_code;
+  const gradeSection = currentClass[0].grade_section;
+
+  // Get students and their attendance for this class
+  const [result] = await $pool.execute(
+    `SELECT 
+        s.student_id, 
+        s.full_name, 
+        s.grade_section, 
+        a.status, 
+        a.time_in, 
+        a.remark 
+     FROM students s
+     JOIN student_classes sc ON s.student_id = sc.student_id AND sc.class_id = ?
+     LEFT JOIN attendance a ON s.student_id = a.student_id 
+       AND a.attendance_date = ? 
+       AND a.class_id = ?
+     ORDER BY s.grade_section, s.full_name`,
+    [classId, dateString, classId]
+  );
+
+  console.log("📊 Attendance data:", result);
+
+  if (result.length === 0) {
+    return res.status(404).send('No attendance data found.');
+  }
+
+  const ExcelJS = require('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  const sheetName = `${courseCode} - ${gradeSection}`;
+  const worksheet = workbook.addWorksheet(sheetName);
+
+  // Helper: Convert snake_case to Proper Case
+  const toProperCase = (str) =>
+    str.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+  // Get keys from the data for headers
+  const keys = Object.keys(result[0]);
+
+  // Row 1: Title (merged across columns)
+  const title = `[Attendify] ${courseCode} ${gradeSection} Attendance ${dateString}`;
+  const lastColLetter = String.fromCharCode(64 + keys.length);
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = title;
+  titleCell.font = { name: 'Segoe UI Semibold', size: 24 };
+  titleCell.alignment = { vertical: 'middle'};
+
+  // Row 2: Header row (will be inserted below the title)
+  const headerRowValues = keys.map(key => toProperCase(key));
+  const headerRow = worksheet.addRow(headerRowValues);
+  headerRow.height = 24; 
+  headerRow.alignment = { vertical: 'middle'};
+  headerRow.font = { size: 12 }; 
+  headerRow.font = { color: { argb: 'FF808080' } };
+
+  // Data Rows: starting from row 3
+  result.forEach(row => {
+    const rowValues = keys.map(key => row[key]);
+    worksheet.addRow(rowValues);
   });
 
+  // Adjust each column's width based on header and cell lengths
+  keys.forEach((key, i) => {
+    let maxLength = toProperCase(key).length;
+    result.forEach(row => {
+      const cellValue = row[key] ? row[key].toString() : '';
+      if (cellValue.length > maxLength) maxLength = cellValue.length;
+    });
+    worksheet.getColumn(i + 1).width = maxLength + 5;
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${sheetName}.xlsx`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
+});
 
 router.get('/downloadTodayScheduleOfTeacher', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
 
   const [result] = await $pool.execute(
-      `
-      SELECT 
-          courses.course_name, 
-          classes.course_code, 
-          classes.grade_section, 
-          classes.start_time, 
-          classes.end_time 
-      FROM classes
-      JOIN courses ON classes.course_code = courses.course_code
-      WHERE classes.teacher_username = ? 
+    `
+    SELECT 
+        courses.course_name, 
+        classes.course_code, 
+        classes.grade_section, 
+        classes.start_time, 
+        classes.end_time 
+    FROM classes
+    JOIN courses ON classes.course_code = courses.course_code
+    WHERE classes.teacher_username = ? 
       AND classes.day = DATE_FORMAT(CURRENT_DATE, '%a') 
-      ORDER BY classes.start_time;
-      `,
-      [username]
+    ORDER BY classes.start_time;
+    `,
+    [username]
   );
 
-  const worksheet = xlsx.utils.json_to_sheet(result);
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "Today's Schedule");
+  if (result.length === 0) {
+    return res.status(404).send("No schedule found for today.");
+  }
 
-  const filePath = path.join(__dirname, `[Attendify] Daily Schedule of ${username}.xlsx`);
-  xlsx.writeFile(workbook, filePath);
+  const ExcelJS = require('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  const sheetName = "Today's Schedule";
+  const worksheet = workbook.addWorksheet(sheetName);
 
-  res.download(filePath);
+  // Helper function for proper casing
+  const toProperCase = (str) =>
+    str.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+  // Get keys from result for headers
+  const keys = Object.keys(result[0]);
+
+  // Row 1: Title
+  const title = "Today's Schedule";
+  const lastColLetter = String.fromCharCode(64 + keys.length);
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = title;
+  titleCell.font = { name: 'Segoe UI Semibold', size: 24 };
+  titleCell.alignment = { vertical: 'middle'};
+
+  // Row 2: Header row with specified formatting
+  const headerRowValues = keys.map(key => toProperCase(key));
+  const headerRow = worksheet.addRow(headerRowValues);
+  headerRow.height = 24; 
+  headerRow.alignment = { vertical: 'middle'};
+  headerRow.font = { size: 12 }; 
+  headerRow.font = { color: { argb: 'FF808080' } };
+
+  // Data Rows:
+  result.forEach(row => {
+    const rowValues = keys.map(key => row[key]);
+    worksheet.addRow(rowValues);
+  });
+
+  // Adjust column widths
+  keys.forEach((key, i) => {
+    let maxLength = toProperCase(key).length;
+    result.forEach(row => {
+      const cellValue = row[key] ? row[key].toString() : '';
+      if (cellValue.length > maxLength) maxLength = cellValue.length;
+    });
+    worksheet.getColumn(i + 1).width = maxLength + 5;
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${sheetName}.xlsx`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
 });
 
 router.get('/downloadAllScheduleOfTeacher', $requireRole(['teacher']), async (req, res) => {
   const username = req.session.user.username;
   const [result] = await $pool.execute(
-      `
-      SELECT 
-          courses.course_name, 
-          classes.course_code, 
-          classes.grade_section, 
-          classes.day, 
-          classes.start_time, 
-          classes.end_time 
-      FROM classes
-      JOIN courses ON classes.course_code = courses.course_code
-      WHERE classes.teacher_username = ? 
-      ORDER BY FIELD(classes.day, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'), classes.start_time;
-      `,
-      [username]
+    `
+    SELECT 
+        courses.course_name, 
+        classes.course_code, 
+        classes.grade_section, 
+        classes.day, 
+        classes.start_time, 
+        classes.end_time 
+    FROM classes
+    JOIN courses ON classes.course_code = courses.course_code
+    WHERE classes.teacher_username = ? 
+    ORDER BY FIELD(classes.day, 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'), classes.start_time;
+    `,
+    [username]
   );
 
-  const worksheet = xlsx.utils.json_to_sheet(result);
-  const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, worksheet, "All Schedules");
+  if (result.length === 0) {
+    return res.status(404).send("No schedule data found.");
+  }
 
-  const filePath = path.join(__dirname, `[Attendify] Full Schedule of ${username}.xlsx`);
-  xlsx.writeFile(workbook, filePath);
+  const ExcelJS = require('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  const sheetName = "All Schedules";
+  const worksheet = workbook.addWorksheet(sheetName);
 
-  res.download(filePath);
+  // Helper: Convert snake_case to Proper Case
+  const toProperCase = (str) =>
+    str.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+  // Get keys for headers
+  const keys = Object.keys(result[0]);
+
+  // Row 1: Title
+  const title = "All Schedules";
+  const lastColLetter = String.fromCharCode(64 + keys.length);
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = title;
+  titleCell.font = { name: 'Segoe UI Semibold', size: 24 };
+  titleCell.alignment = { vertical: 'middle'};
+
+  // Row 2: Header row
+  const headerRowValues = keys.map(key => toProperCase(key));
+  const headerRow = worksheet.addRow(headerRowValues);
+  headerRow.height = 24; 
+  headerRow.alignment = { vertical: 'middle'};
+  headerRow.font = { size: 12 }; 
+  headerRow.font = { color: { argb: 'FF808080' } };
+
+  // Data Rows:
+  result.forEach(row => {
+    const rowValues = keys.map(key => row[key]);
+    worksheet.addRow(rowValues);
+  });
+
+  // Adjust column widths
+  keys.forEach((key, i) => {
+    let maxLength = toProperCase(key).length;
+    result.forEach(row => {
+      const cellValue = row[key] ? row[key].toString() : '';
+      if (cellValue.length > maxLength) maxLength = cellValue.length;
+    });
+    worksheet.getColumn(i + 1).width = maxLength + 5;
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${sheetName}.xlsx`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
 });
 
 router.post('/add-remark', $requireRole(['teacher']), async (req, res) => {
@@ -549,8 +685,7 @@ router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req,
       res.status(500).json({ message: "Internal Server Error" });
     }
   });
-  
-  
+
   
 
 module.exports = router;
