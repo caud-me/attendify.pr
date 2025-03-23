@@ -53,8 +53,8 @@ router.get('/ongoing', $requireRole(['teacher']), async (req, res) => {
     const now = moment().tz(timezone);
 
   // hardcode for testing
-//   const hardcodedDateString = '2025-03-03T01:32:05+08:00';
-//   const now = moment(hardcodedDateString)
+  // const hardcodedDateString = '2025-03-24T01:32:05+08:00';
+  // const now = moment(hardcodedDateString)
   const dateString = now.format('YYYY-MM-DD'); // e.g., '2025-02-02'
   const timeString = now.format('HH:mm:ss'); // e.g., '00:51:00'
   const dayName = now.format('ddd'); // Short day name (e.g., "Tue")
@@ -131,16 +131,29 @@ router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (
   const username = req.session.user.username;
   const timezone = 'Asia/Manila';
   const now = moment().tz(timezone);
+  // const hardcodedDateString = '2025-03-24T01:32:05+08:00';
+  // const now = moment(hardcodedDateString)
   const dateString = now.format('YYYY-MM-DD');
   const dayName = now.format('ddd');
   const currentTime = now.format('HH:mm:ss');
 
   // Get current class information
   const [currentClass] = await $pool.execute(
-    `SELECT class_id, course_code, grade_section, start_time, end_time 
-     FROM classes 
-     WHERE teacher_username = ? AND day = ? AND ? BETWEEN start_time AND end_time
-     LIMIT 1`,
+    `
+    SELECT 
+        c.class_id, 
+        c.course_code, 
+        courses.course_name, 
+        c.grade_section, 
+        c.start_time, 
+        c.end_time
+    FROM classes c
+    JOIN courses ON c.course_code = courses.course_code
+    WHERE c.teacher_username = ?
+    AND c.day = ?
+    AND ? BETWEEN c.start_time AND c.end_time
+    LIMIT 1;
+     `,
     [username, dayName, currentTime]
   );
 
@@ -151,6 +164,7 @@ router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (
   const classId = currentClass[0].class_id;
   const courseCode = currentClass[0].course_code;
   const gradeSection = currentClass[0].grade_section;
+  const courseName = currentClass[0].course_name;
 
   // Get students and their attendance for this class
   const [result] = await $pool.execute(
@@ -189,7 +203,7 @@ router.get('/downloadStudentAttendanceToday', $requireRole(['teacher']), async (
   const keys = Object.keys(result[0]);
 
   // Row 1: Title (merged across columns)
-  const title = `[Attendify] ${courseCode} ${gradeSection} Attendance ${dateString}`;
+  const title = `[Attendify] ${courseName} ${gradeSection} Attendance ${dateString}`;
   const lastColLetter = String.fromCharCode(64 + keys.length);
   worksheet.mergeCells(`A1:${lastColLetter}1`);
   const titleCell = worksheet.getCell('A1');
@@ -686,6 +700,18 @@ router.get('/monthlyAttendance/download', $requireRole(['teacher']), async (req,
     }
   });
 
-  
+  router.get('/api', $requireRole(['teacher']), async (req, res) => {
+
+    const [classes] = await $pool.execute(`
+      SELECT classes.*, courses.course_name 
+      FROM classes
+      JOIN courses ON classes.course_code = courses.course_code
+      ORDER BY teacher_username
+  `);  
+
+    res.json({
+      admin_classes: classes
+  });
+});
 
 module.exports = router;

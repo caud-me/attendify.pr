@@ -13,3 +13,8 @@ window.dismissBanner = () => {
     localStorage.setItem('bannerDismissed', 'true');
   }
 };
+
+document.getElementById("mainToggle").addEventListener("click", function(event) {
+  event.preventDefault();
+  document.querySelector("main").classList.toggle("notLimitedTo768p");
+});

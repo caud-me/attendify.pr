@@ -434,6 +434,11 @@ tr:hover td .stub {
     background-color: var(--ui-blue);
 }
 
+
+tr:hover td small {
+    color: var(--ui-blue);
+}
+
 td, th, small {
     font-size: .875rem;
     font-family: 'Segoe UI Variable Small';
@@ -794,4 +799,14 @@ b {
 .left {
     display: inline-flex;
     text-align: start;
+}
+
+.class-entry {
+    padding-bottom: .5rem;
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--ui-grayTranslucent1);
+}
+
+td {
+    vertical-align: top;
 }

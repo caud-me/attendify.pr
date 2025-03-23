@@ -13,7 +13,7 @@ router.get('/me', $requireRole(['admin']), async (req, res) => {
     res.json({ fullname: me_fullname });
 });
 
-router.get('/api', $requireRole(['admin']), async (req, res) => {
+router.get('/api', $requireRole(['admin', 'instructor']), async (req, res) => {
     const [users] = await $pool.execute(`SELECT * FROM users`);
     const [students] = await $pool.execute(`SELECT * FROM students ORDER BY rfid_no`);
     const [student_classes] = await $pool.execute(`

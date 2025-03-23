@@ -19,6 +19,7 @@
                 <p>Verified Teacher</p>
                 <a class="button" href="/logout">Sign Out</a>
                 <a href="/settings" class="button">Settings</a>
+                <a href="" id="mainToggle">✢</a>
             </div>
         </header>
 
@@ -97,6 +98,28 @@
                     </thead>
                     <tbody id="instructor_schedule">
                         <!-- instrutor_schedule filled with SQL -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="wrapped">
+            <h3>Open Schedule</h3>
+            <p>Displays classes of all instructors in a visualized manner</p>
+            <div class="displayTable">
+                <table id="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be added dynamically -->
                     </tbody>
                 </table>
             </div>
