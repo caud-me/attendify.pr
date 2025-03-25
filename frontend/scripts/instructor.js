@@ -3,12 +3,38 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!time24) return '';
         
         try {
-            const [hours24, minutes] = time24.split(':');
+            const [hours24, minutes, seconds] = time24.split(':');
             let period = 'AM';
             let hours12 = parseInt(hours24);
     
             if (hours12 >= 12) {
                 period = 'PM';
+                if (hours12 > 12) {
+                    hours12 -= 12;
+                }
+            }
+            if (hours12 === 0) {
+                hours12 = 12;
+            }
+    
+            return `${hours12}:${minutes}:${seconds} ${period}`;
+        } catch (error) {
+            console.error('Error converting time:', error);
+            console.log('Original time:', time24, 'attempted');
+            return time24; // Return original if conversion fails
+        }
+    }
+
+    function convertTo12HourS(time24) {
+        if (!time24) return '';
+        
+        try {
+            const [hours24, minutes] = time24.split(':');
+            let period = 'am';
+            let hours12 = parseInt(hours24);
+    
+            if (hours12 >= 12) {
+                period = 'pm';
                 if (hours12 > 12) {
                     hours12 -= 12;
                 }
@@ -156,8 +182,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             <p>${scheduleItem.course_name}</p>
                             <div class="stub">${scheduleItem.grade_section}</div>
                         </td>
-                        <td>${convertTo12Hour(scheduleItem.start_time)}</td>
-                        <td>${convertTo12Hour(scheduleItem.end_time)}</td>
+                        <td>${convertTo12HourS(scheduleItem.start_time)}</td>
+                        <td>${convertTo12HourS(scheduleItem.end_time)}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -285,7 +311,7 @@ if (monthDropdown && yearDropdown) {
                         </div>
                         <div>
                             <div id="widget_ongoing_course">${data.class.subject}</div>
-                            <div id="widget_ongoing_schedule">${convertTo12Hour(data.class.start_time)} to ${convertTo12Hour(data.class.end_time)}</div>
+                            <div id="widget_ongoing_schedule">${convertTo12HourS(data.class.start_time)} to ${convertTo12HourS(data.class.end_time)}</div>
                         </div>
                     `;
                 } else {

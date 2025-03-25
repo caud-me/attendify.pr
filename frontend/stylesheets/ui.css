@@ -106,6 +106,7 @@ h3 {
     font-weight: bold;
     letter-spacing: -0.03em;
     transition: var(--transition-smooth);
+    margin: 1rem 0;
 }
 
 h4 {
@@ -186,7 +187,7 @@ video {
     width: 100%;
 }
 
-.wrapped, .tab-content {
+.wrapped {
     padding: 1.25rem;
     background-color: var(--ui-grayTranslucent1);
     border: solid 1px var(--ui-grayTranslucent1);
@@ -195,7 +196,7 @@ video {
     box-shadow: var(--shadow-sm);
 }
 
-.wrapped:hover, .tab-content:hover {
+.wrapped:hover {
     box-shadow: var(--shadow-md);
     border-color: var(--ui-grayTranslucent3);
 }
@@ -457,7 +458,6 @@ td {
     display: flex;
     align-items: center;
     gap: .75rem;
-    margin: .75rem 0;
     font-family: 'Segoe UI Variable Small';
     transition: var(--transition-smooth);
     border-radius: var(--radius-md);
@@ -490,6 +490,7 @@ td {
 #widget_ongoing > :first-child > :nth-child(1) {
     line-height: .9;
     font-size: .875rem;
+    font-family: 'Segoe UI Variable Text Semibold';
 }
 
 #widget_ongoing > :first-child > :nth-child(2) {
@@ -497,6 +498,11 @@ td {
     font-size: 1.5rem;
     font-weight: bold;
     letter-spacing: -.05em;
+}
+
+#widget_ongoing > :last-child > :nth-child(1) {
+    font-size: .875rem;
+    font-family: 'Segoe UI Variable Text Semibold';
 }
 
 #widget_ongoing > :last-child > :nth-child(2) {
@@ -525,16 +531,17 @@ td {
 }
 
 .notLimitedTo768p {
-    max-width: none;
+    max-width: 100%;
 }
 
 main {
     animation: faders 1s cubic-bezier(0.075, 0.82, 0.165, 1);
+    transition: var(--transition-smooth);
 }
 
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 3px;
+    height: 3px;
 }
   
 ::-webkit-scrollbar-thumb {
@@ -809,4 +816,13 @@ b {
 
 td {
     vertical-align: top;
+}
+
+.note {
+    
+    background-color: var(--ui-blueO1);
+    border: solid 1px var(--ui-blueO1);
+    border-radius: var(--radius-sm);
+    color: var(--ui-blue);
+    padding: var(--radius-md);
 }

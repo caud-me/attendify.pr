@@ -21,7 +21,7 @@
         </header>
         <div class="splitView">
             <div>
-                <section id="banner" class="banner prompting wrapped">
+                <section id="banner" class="banner prompting ">
                     <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
                     <h4>Welcome to</h4>
                     <h1 class="colorfull">Attendify!</h1>
@@ -34,6 +34,46 @@
                         </p>
                         
                     <button onclick="dismissBanner()">Got it, Thanks!</button>
+                </section>
+        
+                <section>
+                    <h3>Courses</h3>
+                    <form action="/admin/addCourse" method="post">
+                        <small>Course Code (Provided by School)</small>
+                        <input type="text" name="course_code" placeholder="e.g. SHS1000" required>
+                        <small>Course Description</small>
+                        <input type="text" name="course_name" placeholder="e.g. Artificial Intelligence IV" required>
+                        <button type="submit">+ Add Course</button>
+                    </form>
+                </section>
+        
+                <section>
+                    <h3>Classes</h3>
+                    <p>The same teacher may have multiple classes as long as the schedules don't interfere</p>
+                    <form action="/admin/addClass" method="post">
+                        <h4>General</h4>
+                        <small>What Subject? In Course Code (Provided by School)</small>
+                        <input type="text" name="coursecode" placeholder="e.g. SHS1000" required>
+                        <small>For Grade Section?</small>
+                        <input type="text" name="gradesection" placeholder="e.g. 12-STEM" required>
+                        <small>Whos the Instructor for this course?</small>
+                        <input type="text" name="username" placeholder="e.g. johnny.appleseed" required>
+                        <h4>Schedule</h4>
+                        <small>Day of class</small>
+                        <select name="day" title="day">
+                            <option value="Mon" default>Mon</option>
+                            <option value="Tue">Tue</option>
+                            <option value="Wed">Wed</option>
+                            <option value="Thu">Thu</option>
+                            <option value="Fri">Fri</option>
+                            <option value="Sat">Sat</option>
+                        </select>
+                        <small>Start Time</small>
+                        <input type="text" name="starttime" placeholder="e.g. 10:30" required>
+                        <small>End Time</small>
+                        <input type="text" name="endtime" placeholder="e.g. 10:30" required>
+                        <button type="submit">+ Add Class</button>
+                    </form>
                 </section>
 
                 <section>
@@ -170,74 +210,6 @@
                         </script>
                     </div>
                 </section>
-        
-                <section class="wrapped">
-                    <h3>Courses</h3>
-                    <form action="/admin/addCourse" method="post">
-                        <small>Course Code (Provided by School)</small>
-                        <input type="text" name="course_code" placeholder="e.g. SHS1000" required>
-                        <small>Course Description</small>
-                        <input type="text" name="course_name" placeholder="e.g. Artificial Intelligence IV" required>
-                        <button type="submit">+ Add Course</button>
-                    </form>
-                </section>
-        
-                <section class="wrapped">
-                    <h3>Classes</h3>
-                    <p>The same teacher may have multiple classes as long as the schedules don't interfere</p>
-                    <form action="/admin/addClass" method="post">
-                        <h4>General</h4>
-                        <small>What Subject? In Course Code (Provided by School)</small>
-                        <input type="text" name="coursecode" placeholder="e.g. SHS1000" required>
-                        <small>For Grade Section?</small>
-                        <input type="text" name="gradesection" placeholder="e.g. 12-STEM" required>
-                        <small>Whos the Instructor for this course?</small>
-                        <input type="text" name="username" placeholder="e.g. johnny.appleseed" required>
-                        <h4>Schedule</h4>
-                        <small>Day of class</small>
-                        <select name="day" title="day">
-                            <option value="Mon" default>Mon</option>
-                            <option value="Tue">Tue</option>
-                            <option value="Wed">Wed</option>
-                            <option value="Thu">Thu</option>
-                            <option value="Fri">Fri</option>
-                            <option value="Sat">Sat</option>
-                        </select>
-                        <small>Start Time</small>
-                        <input type="text" name="starttime" placeholder="e.g. 10:30" required>
-                        <small>End Time</small>
-                        <input type="text" name="endtime" placeholder="e.g. 10:30" required>
-                        <button type="submit">+ Add Class</button>
-                    </form>
-                </section>
-                <section class="wrapped">
-                    <h3>Advanced</h3>
-                    <p>Re-enroll all students</p>
-                    <small>If you want to ensure all regular students are enrolled to their respective class, you can re-enroll them.</small>
-                    <p><a href="/admin/reenroll">Re-enroll Students</a></p>
-                </section>
-
-                <section class="wrapped">
-                    <h3>Visualized Schedules</h3>
-                    <p>Displays classes in visualized manner</p>
-                    <div class="displayTable">
-                        <table id="schedule-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Mon</th>
-                                    <th>Tue</th>
-                                    <th>Wed</th>
-                                    <th>Thu</th>
-                                    <th>Fri</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Rows will be added dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
             </div>
             <div>
                 <section>
@@ -366,6 +338,35 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Advanced</h3>
+                    <p>Re-enroll all students</p>
+                    <small>If you want to ensure all regular students are enrolled to their respective class, you can re-enroll them.</small>
+                    <p><a href="/admin/reenroll">Re-enroll Students</a></p>
+                </section>
+
+                <section>
+                    <h3>Visualized Schedules</h3>
+                    <p>Displays classes in visualized manner</p>
+                    <div class="displayTable">
+                        <table id="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows will be added dynamically -->
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>

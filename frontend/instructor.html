@@ -19,9 +19,11 @@
                 <p>Verified Teacher</p>
                 <a class="button" href="/logout">Sign Out</a>
                 <a href="/settings" class="button">Settings</a>
-                <a href="" id="mainToggle">✢</a>
+                <a class="button" href="" id="mainToggle">Expand</a>
             </div>
         </header>
+
+        <small class="note">This requires the use of the customized Attendify RFID scanner. Please ensure that you have the device with you to track attendance.</small>
 
         <section id="banner" class="banner prompting wrapped">
             <img src="resources/Christmas-Collection n5.svg" alt="" srcset="" class="scalable">
@@ -57,8 +59,8 @@
                         <div id="widget_ongoing_schedule">10:30 am to 12 pm</div>
                     </div>
                 </div>
-                <h3>Live Student Monitoring</h3>
                 <p id="liveDataContainer"></p>
+                <h4>Live Student Monitoring</h4>
                 <p>As soon as the student scans during your class, the data will be recorded here in realtime. You can get a copy of todays attendance <a href="instructor/downloadStudentAttendanceToday">here</a></p>
                 <div class="colorfulll liner"></div>
                 <div class="displayTable" id="table_todayAttendance">
@@ -84,8 +86,8 @@
         </section>
 
         <section>
-            <h3>Your <span id="day"></span> schedule</h3>
-            <p>You can get a copy of your schedule for <a href="/instructor/downloadTodayScheduleOfTeacher">today</a> or export your <a href="/instructor/downloadAllScheduleOfTeacher">full schedule</a>.</p>
+            <h3><span id="day"></span> Schedule</h3>
+
             <div class="displayTable">
                 <table>
                     <thead>
@@ -101,9 +103,11 @@
                     </tbody>
                 </table>
             </div>
+            <p>You can get a copy of your schedule for <a href="/instructor/downloadTodayScheduleOfTeacher">today</a> or export your <a href="/instructor/downloadAllScheduleOfTeacher">full schedule</a>.</p>  
+            
         </section>
 
-        <section class="wrapped">
+        <section>
             <h3>Open Schedule</h3>
             <p>Displays classes of all instructors in a visualized manner</p>
             <div class="displayTable">
@@ -126,10 +130,21 @@
         </section>
 
         <section>
-            <small class="stub colorfulll">NEW</small>
             <h3>Monthly Attendance</h3>
             <p>Keep track of your students' attendance records for each month. Select the desired month and year to view the attendance overview.</p>
             <p>Export attendance records for this month <a href="/instructor/monthlyAttendance/download">here</a>.</p>
+            <div class="displayTable">
+                <table class="attendance-table">
+                    <thead>
+                        <tr id="attendanceHeader">
+                            <th>#</th>
+                            <th>Student Name</th>
+
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody"></tbody>
+                </table>
+            </div>
             <div class="controls">
                 <select id="month" name="month" title="month">
                     <option value="1">January</option>
@@ -148,25 +163,13 @@
 
                 <select id="year" name="year" title="year"></select>
             </div>
-            <div class="displayTable">
-                <table class="attendance-table">
-                    <thead>
-                        <tr id="attendanceHeader">
-                            <th>#</th>
-                            <th>Student Name</th>
-
-                        </tr>
-                    </thead>
-                    <tbody id="attendanceTableBody"></tbody>
-                </table>
-            </div>
             <small>Where Late: Yellow, Green: Present. Absent students left unmarked.</small>
         </section>
 
         <footer>
             <img src="resources/attendify - logo.svg" alt="" height="48px" width="48px">
             <h3>Attendify</h3>
-            <p>Esperida D., Penas J., Rodriguez N., Ros H., Caudilla A., Guido N., Oropesa I. <a href="/demolive">Details...</a> </p>
+            <small>Esperida D., Penas J., Rodriguez N., Ros H., Caudilla A., Guido N., Oropesa I. </small>
         </footer>
 
         <!-- <section>
